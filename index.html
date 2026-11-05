@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Keuangan & Inventaris Bucket Snack - Dark Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc;
+        }
+        
+        /* Custom scrollbar untuk tema gelap */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Styling khusus cetak (Media Print override ke background putih) */
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { 
+                visibility: visible; 
+                color: #000000 !important;
+                background: #ffffff !important;
+            }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 text-white shadow-xl no-print sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-gradient-to-tr from-pink-600 to-rose-500 rounded-xl shadow-lg shadow-pink-500/20">
+                    <i class="fa-solid fa-gift text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wide bg-gradient-to-r from-white via-slate-200 to-pink-400 bg-clip-text text-transparent">SnackBucket Studio</h1>
+                    <p class="text-xs text-slate-400">Keuangan & Stock Inventaris (Dark Mode)</p>
+                </div>
+            </div>
+            <!-- Quick Info Modal -->
+            <div class="flex items-center space-x-4 bg-slate-800/80 px-4 py-2 rounded-2xl border border-slate-700/80 shadow-inner">
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Saldo Kas Saat Ini</span>
+                    <span id="nav-kas" class="text-lg font-black text-emerald-400 tracking-tight">Rp 0</span>
+                </div>
+                <button onclick="openModalAwal()" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-lg shadow-pink-600/30 transition active:scale-95">
+                    <i class="fa-solid fa-wallet mr-1"></i> Edit Modal
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full no-print">
+
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-800/80 pb-4">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active-tab bg-pink-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-lg shadow-pink-600/20 border border-pink-500/30">
+                <i class="fa-solid fa-chart-line"></i> Dashboard & Kas
+            </button>
+            <button onclick="switchTab('master')" id="tab-master" class="tab-btn bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 border border-slate-800">
+                <i class="fa-solid fa-boxes-stacked"></i> Barang Default
+            </button>
+            <button onclick="switchTab('bucket')" id="tab-bucket" class="tab-btn bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 border border-slate-800">
+                <i class="fa-solid fa-basket-shopping"></i> Racik Bucket Snack
+            </button>
+            <button onclick="switchTab('transaksi')" id="tab-transaksi" class="tab-btn bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 border border-slate-800">
+                <i class="fa-solid fa-cash-register"></i> Transaksi Jual / Beli
+            </button>
+            <button onclick="switchTab('laporan')" id="tab-laporan" class="tab-btn bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 border border-slate-800">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Laporan Keuangan
+            </button>
+        </div>
+
+        <!-- SECTION 1: DASHBOARD & SUMMARY -->
+        <section id="sec-dashboard" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider">Modal Awal</span>
+                        <i class="fa-solid fa-coins text-amber-400 text-lg"></i>
+                    </div>
+                    <h3 id="dash-modal" class="text-xl font-extrabold text-slate-100">Rp 0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Ekuitas dasar disetor</p>
+                </div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider">Saldo Kas Sekarang</span>
+                        <i class="fa-solid fa-vault text-emerald-400 text-lg"></i>
+                    </div>
+                    <h3 id="dash-kas" class="text-xl font-extrabold text-emerald-400">Rp 0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Aset tunai liquid</p>
+                </div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider">Nilai Persediaan</span>
+                        <i class="fa-solid fa-box-archive text-blue-400 text-lg"></i>
+                    </div>
+                    <h3 id="dash-inventaris" class="text-xl font-extrabold text-blue-400">Rp 0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Total aset stok & bucket</p>
+                </div>
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider">Laba / Rugi Bersih</span>
+                        <i class="fa-solid fa-chart-line text-purple-400 text-lg"></i>
+                    </div>
+                    <h3 id="dash-laba" class="text-xl font-extrabold text-purple-400">Rp 0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Pendapatan dikurangi HPP</p>
+                </div>
+            </div>
+
+            <!-- Quick Action & Alert -->
+            <div class="bg-gradient-to-r from-slate-900 via-purple-950/60 to-pink-950/50 rounded-2xl p-6 border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-print text-pink-500"></i> Siap mencetak Laporan Laba Rugi & Neraca?
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Setiap transaksi pembelian stok dan penjualan otomatis meng-update nilai neraca secara akurat.</p>
+                </div>
+                <button onclick="switchTab('laporan')" class="bg-pink-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-pink-500 transition shadow-lg shadow-pink-600/30 shrink-0">
+                    <i class="fa-solid fa-arrow-right mr-1"></i> Buka Cetak Laporan
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: BARANG DEFAULT (MASTER DATA) -->
+        <section id="sec-master" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Add Barang -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg h-fit">
+                    <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-pink-500"></i> Tambah Barang Default
+                    </h2>
+                    <form id="form-barang" onsubmit="saveBarangDefault(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Barang / Material</label>
+                            <input type="text" id="m-nama" required placeholder="Contoh: Chocolatos, Wrapping Paper" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli (Rp)</label>
+                                <input type="number" id="m-harga-beli" min="0" required placeholder="2000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual (Rp)</label>
+                                <input type="number" id="m-harga-jual" min="0" required placeholder="3000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Awal Barang</label>
+                            <input type="number" id="m-stok" min="0" value="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                        </div>
+                        <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-pink-600/30">
+                            <i class="fa-solid fa-save mr-1"></i> Simpan Barang Default
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Table Master Barang -->
+                <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-list text-pink-500 mr-2"></i> Daftar Barang Master Default</span>
+                        <span id="count-barang" class="text-xs bg-slate-800 text-pink-400 px-3 py-1 rounded-full font-bold border border-slate-700">0 Item</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="py-3 px-3">Nama Barang</th>
+                                    <th class="py-3 px-3">Hrg Beli</th>
+                                    <th class="py-3 px-3">Hrg Jual</th>
+                                    <th class="py-3 px-3 text-center">Stok</th>
+                                    <th class="py-3 px-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbl-master-barang" class="divide-y divide-slate-800/60">
+                                <!-- Dynamic items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: MANAGEMENT BUCKET (PAKET) -->
+        <section id="sec-bucket" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Meracik Bucket -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-pink-500"></i> Buat / Racik Bucket Baru
+                    </h2>
+                    <form id="form-bucket" onsubmit="saveBucket(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Bucket Snack</label>
+                            <input type="text" id="b-nama" required placeholder="Contoh: Bucket Wisuda Hemat A" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                        </div>
+
+                        <!-- Dynamic Item Picker -->
+                        <div class="border border-slate-800 p-3 rounded-xl bg-slate-950/60 space-y-3">
+                            <label class="block text-xs font-bold text-slate-300">Komponen / Isian Stock Dalam Bucket</label>
+                            
+                            <div class="space-y-2" id="bucket-items-container">
+                                <!-- Dynamic rows inserted by JS -->
+                            </div>
+
+                            <button type="button" onclick="addBucketRow()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 rounded-lg text-xs transition border border-slate-700">
+                                <i class="fa-solid fa-plus mr-1"></i> Tambah Isian Barang
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Bucket Dibuat</label>
+                                <input type="number" id="b-stok" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual Bucket (Rp)</label>
+                                <input type="number" id="b-harga-jual" min="0" required placeholder="50000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+                            </div>
+                        </div>
+
+                        <div class="bg-pink-950/40 border border-pink-900/60 p-3 rounded-xl text-xs text-pink-300 font-medium flex justify-between items-center">
+                            <span>Total HPP / Modal Bahan:</span>
+                            <span id="b-hpp-calc" class="font-bold text-pink-400 text-sm">Rp 0</span>
+                        </div>
+
+                        <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-pink-600/30">
+                            <i class="fa-solid fa-save mr-1"></i> Simpan Paket Bucket
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Daftar Bucket Ready -->
+                <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
+                        <span><i class="fa-solid fa-boxes-packing text-pink-500 mr-2"></i> Daftar Stok Bucket Snack</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="cards-bucket-container">
+                        <!-- Dynamic Cards -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: TRANSAKSI (JUAL & BELI) -->
+        <section id="sec-transaksi" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Transaksi Pembelian Stock (Restock) -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <div class="border-b border-slate-800 pb-3 mb-4">
+                        <h2 class="text-md font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-cart-flatbed text-amber-400"></i> Transaksi Pembelian Stok (Beli Material)
+                        </h2>
+                        <p class="text-xs text-slate-400">Menambah stok barang & mengurangi Kas toko.</p>
+                    </div>
+                    <form id="form-beli" onsubmit="processPembelian(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Pilih Barang Master</label>
+                            <select id="tb-barang-id" onchange="autoFillBeli()" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" required>
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Beli (QTY)</label>
+                                <input type="number" id="tb-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli per Unit (Rp)</label>
+                                <input type="number" id="tb-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
+                            </div>
+                        </div>
+                        <div class="p-3 bg-amber-950/40 border border-amber-900/60 rounded-xl flex justify-between items-center text-xs text-amber-300 font-semibold">
+                            <span>Total Pengeluaran Kas:</span>
+                            <span id="tb-total-disp" class="text-sm font-bold text-amber-400">Rp 0</span>
+                        </div>
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-xl transition text-sm shadow-lg shadow-amber-500/20">
+                            <i class="fa-solid fa-truck-ramp-box mr-1"></i> Proses Pembelian (Kurangi Kas)
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Transaksi Penjualan Barang / Bucket -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <div class="border-b border-slate-800 pb-3 mb-4">
+                        <h2 class="text-md font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-cash-register text-emerald-400"></i> Transaksi Penjualan (Kasir)
+                        </h2>
+                        <p class="text-xs text-slate-400">Menjual eceran / bucket, menambah Kas toko.</p>
+                    </div>
+                    <form id="form-jual" onsubmit="processPenjualan(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Tipe Produk</label>
+                            <select id="tj-tipe" onchange="updateJualDropdown()" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                                <option value="bucket">Bucket Snack (Paket)</option>
+                                <option value="barang">Barang Default / Eceran</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Pilih Produk</label>
+                            <select id="tj-produk-id" onchange="autoFillJual()" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" required>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Jual (QTY)</label>
+                                <input type="number" id="tj-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual per Unit (Rp)</label>
+                                <input type="number" id="tj-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
+                            </div>
+                        </div>
+                        <div class="p-3 bg-emerald-950/40 border border-emerald-900/60 rounded-xl flex justify-between items-center text-xs text-emerald-300 font-semibold">
+                            <span>Total Pendapatan Kas:</span>
+                            <span id="tj-total-disp" class="text-sm font-bold text-emerald-400">Rp 0</span>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-2.5 rounded-xl transition text-sm shadow-lg shadow-emerald-500/20">
+                            <i class="fa-solid fa-receipt mr-1"></i> Simpan Penjualan (Tambah Kas)
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabel Riwayat Transaksi -->
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
+                    <span><i class="fa-solid fa-clock-rotate-left text-pink-500 mr-2"></i> Riwayat Transaksi</span>
+                    <button onclick="clearAllTransactions()" class="text-xs text-red-400 hover:text-red-300 font-semibold">
+                        <i class="fa-solid fa-trash mr-1"></i> Reset Transaksi
+                    </button>
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-3">Waktu</th>
+                                <th class="py-3 px-3">Jenis</th>
+                                <th class="py-3 px-3">Item</th>
+                                <th class="py-3 px-3 text-center">QTY</th>
+                                <th class="py-3 px-3">Harga Unit</th>
+                                <th class="py-3 px-3 text-right">Total Transaksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbl-riwayat" class="divide-y divide-slate-800/60">
+                            <!-- Dynamic Trans -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: LAPORAN KEUANGAN & PRINT -->
+        <section id="sec-laporan" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100">Cetak Laporan Keuangan</h2>
+                    <p class="text-xs text-slate-400">Pilih laporan yang ingin di-preview dan dicetak ke printer atau simpan PDF (Otomatis background putih saat diprint).</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="printLaporan('laba-rugi')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-purple-600/30 flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak Laporan Laba/Rugi
+                    </button>
+                    <button onclick="printLaporan('neraca')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak Laporan Neraca
+                    </button>
+                </div>
+            </div>
+
+            <!-- Previews -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Preview Laba Rugi -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <h3 class="text-md font-bold text-purple-400 mb-4 border-b border-slate-800 pb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice"></i> Preview Laporan Laba / Rugi
+                    </h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                            <span class="text-slate-400">Total Pendapatan Penjualan</span>
+                            <span id="prv-pendapatan" class="font-semibold text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+                            <span class="text-slate-400">Harga Pokok Penjualan (HPP / COGS)</span>
+                            <span id="prv-hpp" class="font-semibold text-red-400">(Rp 0)</span>
+                        </div>
+                        <div class="flex justify-between py-2 font-bold text-md border-t-2 border-slate-800">
+                            <span class="text-slate-200">Laba / Rugi Bersih</span>
+                            <span id="prv-laba-kotor" class="text-purple-400">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Neraca -->
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+                    <h3 class="text-md font-bold text-indigo-400 mb-4 border-b border-slate-800 pb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-scale-balanced"></i> Preview Laporan Neraca
+                    </h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="font-bold text-xs uppercase tracking-wider text-slate-400 bg-slate-950 p-2 rounded-lg border border-slate-800">ASET (AKTIVA)</div>
+                        <div class="flex justify-between pl-3 text-xs">
+                            <span class="text-slate-400">Kas & Bank</span>
+                            <span id="prv-neraca-kas" class="font-medium text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between pl-3 text-xs">
+                            <span class="text-slate-400">Persediaan Stok Barang & Bucket</span>
+                            <span id="prv-neraca-stok" class="font-medium text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between py-2 px-3 bg-indigo-950/40 border border-indigo-900/60 font-bold text-indigo-300 rounded-xl">
+                            <span>TOTAL ASET</span>
+                            <span id="prv-neraca-total-aset" class="text-indigo-400">Rp 0</span>
+                        </div>
+
+                        <div class="font-bold text-xs uppercase tracking-wider text-slate-400 bg-slate-950 p-2 rounded-lg border border-slate-800 mt-4">EKUITAS & KEWAJIBAN</div>
+                        <div class="flex justify-between pl-3 text-xs">
+                            <span class="text-slate-400">Modal Awal Disetor</span>
+                            <span id="prv-neraca-modal" class="font-medium text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between pl-3 text-xs">
+                            <span class="text-slate-400">Laba Ditahan / Berjalan</span>
+                            <span id="prv-neraca-laba" class="font-medium text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between py-2 px-3 bg-indigo-950/40 border border-indigo-900/60 font-bold text-indigo-300 rounded-xl">
+                            <span>TOTAL EKUITAS & KEWAJIBAN</span>
+                            <span id="prv-neraca-total-pasiva" class="text-indigo-400">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PRINT SECTION CONTAINER (ONLY VISIBLE WHEN PRINTING) -->
+    <div id="print-area" class="print-area hidden">
+        <div id="print-content"></div>
+    </div>
+
+    <!-- MODAL EDIT MODAL AWAL -->
+    <div id="modal-awal-dialog" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <h3 class="text-md font-bold text-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-wallet text-pink-500"></i> Set Modal Awal Usaha
+            </h3>
+            <p class="text-xs text-slate-400">Masukkan dana awal kas yang Anda alokasikan untuk usaha bucket snack ini.</p>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal Modal Awal (Rp)</label>
+                <input type="number" id="input-modal-awal" min="0" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModalAwal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 rounded-xl">Batal</button>
+                <button onclick="saveModalAwal()" class="px-4 py-2 text-xs font-bold bg-pink-600 text-white rounded-xl hover:bg-pink-500 shadow-lg shadow-pink-600/30">Simpan Modal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-slate-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl transition opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">Notifikasi</span>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // --- APP STATE & STORAGE KEY ---
+        const STORAGE_KEY = 'SNACK_BUCKET_DB_V1';
+
+        let state = {
+            modalAwal: 1000000,
+            kas: 1000000,
+            masterBarang: [
+                { id: 'b1', nama: 'Chocolatos Roll', hargaBeli: 1500, hargaJual: 2500, stok: 30 },
+                { id: 'b2', nama: 'Beng Beng', hargaBeli: 2000, hargaJual: 3000, stok: 20 },
+                { id: 'b3', nama: 'Pita & Wrapping Sheet', hargaBeli: 5000, hargaJual: 7000, stok: 15 }
+            ],
+            buckets: [
+                {
+                    id: 'bk1',
+                    nama: 'Bucket Snack Valentine Mini',
+                    stok: 3,
+                    hargaJual: 35000,
+                    hppUnit: 18500,
+                    items: [
+                        { barangId: 'b1', namaItem: 'Chocolatos Roll', qty: 5, hrgBeli: 1500 },
+                        { barangId: 'b2', namaItem: 'Beng Beng', qty: 3, hrgBeli: 2000 },
+                        { barangId: 'b3', namaItem: 'Pita & Wrapping Sheet', qty: 1, hrgBeli: 5000 }
+                    ]
+                }
+            ],
+            transaksi: []
+        };
+
+        // --- INIT & PERSISTENCE ---
+        window.onload = function() {
+            loadFromStorage();
+            renderAll();
+            // Init default dynamic row bucket
+            addBucketRow();
+        };
+
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            renderAll();
+        }
+
+        function loadFromStorage() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                try {
+                    state = JSON.parse(data);
+                } catch(e) {
+                    console.error("Gagal load storage:", e);
+                }
+            }
+        }
+
+        function formatRp(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka || 0);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-pink-600', 'text-white', 'shadow-pink-600/20', 'border-pink-500/30');
+                btn.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-800');
+            });
+
+            document.getElementById('sec-' + tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('bg-slate-900', 'text-slate-400', 'border-slate-800');
+            activeBtn.classList.add('bg-pink-600', 'text-white', 'shadow-pink-600/20', 'border-pink-500/30');
+
+            if (tabId === 'transaksi') populateTransaksiDropdowns();
+        }
+
+        function renderAll() {
+            // Update Header & Dashboard Stats
+            document.getElementById('nav-kas').innerText = formatRp(state.kas);
+            document.getElementById('dash-modal').innerText = formatRp(state.modalAwal);
+            document.getElementById('dash-kas').innerText = formatRp(state.kas);
+
+            // Calculate Inventory Value & Financials
+            let totalInventaris = 0;
+            state.masterBarang.forEach(b => { totalInventaris += (b.stok * b.hargaBeli); });
+            state.buckets.forEach(bk => { totalInventaris += (bk.stok * bk.hppUnit); });
+
+            let totalPendapatan = 0;
+            let totalHPP = 0;
+            state.transaksi.filter(t => t.tipe === 'JUAL').forEach(t => {
+                totalPendapatan += t.total;
+                totalHPP += (t.hppUnit * t.qty);
+            });
+            const labaBersih = totalPendapatan - totalHPP;
+
+            document.getElementById('dash-inventaris').innerText = formatRp(totalInventaris);
+            document.getElementById('dash-laba').innerText = formatRp(labaBersih);
+            document.getElementById('dash-laba').className = `text-xl font-extrabold ${labaBersih >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+            // Render Modules
+            renderMasterBarang();
+            renderBucketCards();
+            renderRiwayat();
+            renderLaporanPreviews(totalPendapatan, totalHPP, labaBersih, totalInventaris);
+            populateTransaksiDropdowns();
+        }
+
+        // --- MASTER BARANG FUNCTIONS ---
+        function saveBarangDefault(e) {
+            e.preventDefault();
+            const nama = document.getElementById('m-nama').value.trim();
+            const hargaBeli = parseFloat(document.getElementById('m-harga-beli').value) || 0;
+            const hargaJual = parseFloat(document.getElementById('m-harga-jual').value) || 0;
+            const stok = parseInt(document.getElementById('m-stok').value) || 0;
+
+            state.masterBarang.push({
+                id: 'b_' + Date.now(),
+                nama,
+                hargaBeli,
+                hargaJual,
+                stok
+            });
+
+            saveToStorage();
+            document.getElementById('form-barang').reset();
+            showToast('Barang master berhasil ditambahkan!');
+        }
+
+        function renderMasterBarang() {
+            const tbody = document.getElementById('tbl-master-barang');
+            tbody.innerHTML = '';
+            document.getElementById('count-barang').innerText = `${state.masterBarang.length} Item`;
+
+            if (state.masterBarang.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">Belum ada data barang master.</td></tr>`;
+                return;
+            }
+
+            state.masterBarang.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-semibold text-slate-200">${item.nama}</td>
+                    <td class="py-3 px-3 text-slate-400">${formatRp(item.hargaBeli)}</td>
+                    <td class="py-3 px-3 text-slate-400">${formatRp(item.hargaJual)}</td>
+                    <td class="py-3 px-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${item.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">${item.stok}</span></td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="deleteBarang('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteBarang(id) {
+            if (confirm('Hapus barang master ini?')) {
+                state.masterBarang = state.masterBarang.filter(b => b.id !== id);
+                saveToStorage();
+                showToast('Barang dihapus.');
+            }
+        }
+
+        // --- MANAGEMENT BUCKET FUNCTIONS ---
+        function addBucketRow() {
+            const container = document.getElementById('bucket-items-container');
+            const rowId = 'row_' + Date.now() + Math.random().toString(36).substring(2, 5);
+
+            let masterOptions = `<option value="MANUAL">-- Input Manual --</option>`;
+            state.masterBarang.forEach(m => {
+                masterOptions += `<option value="${m.id}">${m.nama} (Stok: ${m.stok})</option>`;
+            });
+
+            const rowDiv = document.createElement('div');
+            rowDiv.id = rowId;
+            rowDiv.className = "bucket-row grid grid-cols-12 gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-800 text-xs";
+            rowDiv.innerHTML = `
+                <div class="col-span-4">
+                    <select onchange="onSelectBucketBarang('${rowId}')" class="b-select-id w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-200 rounded-lg focus:outline-none">
+                        ${masterOptions}
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <input type="text" placeholder="Nama item" class="b-custom-nama w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-200 rounded-lg focus:outline-none" required>
+                </div>
+                <div class="col-span-2">
+                    <input type="number" min="1" value="1" placeholder="QTY" oninput="calculateBucketHPP()" class="b-custom-qty w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-200 rounded-lg focus:outline-none" required>
+                </div>
+                <div class="col-span-2 flex items-center gap-1">
+                    <input type="number" min="0" placeholder="Hrg Beli" oninput="calculateBucketHPP()" class="b-custom-hrg w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-200 rounded-lg focus:outline-none" required>
+                    <button type="button" onclick="removeBucketRow('${rowId}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-times"></i></button>
+                </div>
+            `;
+            container.appendChild(rowDiv);
+            calculateBucketHPP();
+        }
+
+        function removeBucketRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+                calculateBucketHPP();
+            }
+        }
+
+        function onSelectBucketBarang(rowId) {
+            const row = document.getElementById(rowId);
+            const selectVal = row.querySelector('.b-select-id').value;
+            const inputNama = row.querySelector('.b-custom-nama');
+            const inputHrg = row.querySelector('.b-custom-hrg');
+
+            if (selectVal !== 'MANUAL') {
+                const item = state.masterBarang.find(b => b.id === selectVal);
+                if (item) {
+                    inputNama.value = item.nama;
+                    inputNama.readOnly = true;
+                    inputHrg.value = item.hargaBeli;
+                }
+            } else {
+                inputNama.value = '';
+                inputNama.readOnly = false;
+                inputHrg.value = '';
+            }
+            calculateBucketHPP();
+        }
+
+        function calculateBucketHPP() {
+            let totalHPP = 0;
+            const rows = document.querySelectorAll('.bucket-row');
+            rows.forEach(r => {
+                const qty = parseFloat(r.querySelector('.b-custom-qty').value) || 0;
+                const hrg = parseFloat(r.querySelector('.b-custom-hrg').value) || 0;
+                totalHPP += (qty * hrg);
+            });
+            document.getElementById('b-hpp-calc').innerText = formatRp(totalHPP);
+            return totalHPP;
+        }
+
+        function saveBucket(e) {
+            e.preventDefault();
+            const nama = document.getElementById('b-nama').value.trim();
+            const stokBucket = parseInt(document.getElementById('b-stok').value) || 1;
+            const hargaJual = parseFloat(document.getElementById('b-harga-jual').value) || 0;
+
+            const rows = document.querySelectorAll('.bucket-row');
+            if (rows.length === 0) {
+                showToast('Tambahkan minimal 1 item isian bucket!');
+                return;
+            }
+
+            let items = [];
+            let totalHppUnit = 0;
+            let errorStok = false;
+
+            rows.forEach(r => {
+                const selectVal = r.querySelector('.b-select-id').value;
+                const namaItem = r.querySelector('.b-custom-nama').value;
+                const qty = parseInt(r.querySelector('.b-custom-qty').value) || 1;
+                const hrgBeli = parseFloat(r.querySelector('.b-custom-hrg').value) || 0;
+
+                if (selectVal !== 'MANUAL') {
+                    const master = state.masterBarang.find(m => m.id === selectVal);
+                    const butuhStok = qty * stokBucket;
+                    if (master && master.stok < butuhStok) {
+                        showToast(`Stok "${master.nama}" kurang ${butuhStok - master.stok} unit.`);
+                        errorStok = true;
+                    }
+                }
+
+                items.push({ barangId: selectVal, namaItem, qty, hrgBeli });
+                totalHppUnit += (qty * hrgBeli);
+            });
+
+            if (errorStok) return;
+
+            items.forEach(it => {
+                if (it.barangId !== 'MANUAL') {
+                    const master = state.masterBarang.find(m => m.id === it.barangId);
+                    if (master) {
+                        master.stok -= (it.qty * stokBucket);
+                    }
+                }
+            });
+
+            const newBucket = {
+                id: 'bk_' + Date.now(),
+                nama,
+                stok: stokBucket,
+                hargaJual,
+                hppUnit: totalHppUnit,
+                items
+            };
+
+            state.buckets.push(newBucket);
+            saveToStorage();
+
+            document.getElementById('form-bucket').reset();
+            document.getElementById('bucket-items-container').innerHTML = '';
+            addBucketRow();
+            showToast('Bucket Snack berhasil dibuat & tersimpan!');
+        }
+
+        function renderBucketCards() {
+            const container = document.getElementById('cards-bucket-container');
+            container.innerHTML = '';
+
+            if (state.buckets.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center text-slate-500 py-6">Belum ada paket bucket yang diracik.</div>`;
+                return;
+            }
+
+            state.buckets.forEach(bk => {
+                let itemsList = bk.items.map(i => `<li class="flex justify-between"><span>• ${i.namaItem} (${i.qty}x)</span> <span class="text-slate-500">@${formatRp(i.hrgBeli)}</span></li>`).join('');
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-slate-100 text-sm">${bk.nama}</h3>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-bold ${bk.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">Stok: ${bk.stok}</span>
+                        </div>
+                        <div class="text-xs text-slate-400 space-y-1 mb-3">
+                            <div class="font-semibold text-slate-300">Rincian Isian:</div>
+                            <ul class="pl-1 space-y-0.5 text-slate-400">
+                                ${itemsList}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-800 pt-3">
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Estimasi HPP: <strong class="text-slate-200">${formatRp(bk.hppUnit)}</strong></span>
+                            <span>Harga Jual: <strong class="text-pink-400 font-bold">${formatRp(bk.hargaJual)}</strong></span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <span class="text-xs text-emerald-400 font-semibold">Margin Laba: ${formatRp(bk.hargaJual - bk.hppUnit)}/unit</span>
+                            <button onclick="deleteBucket('${bk.id}')" class="text-xs text-red-400 hover:text-red-300 font-medium">Hapus Paket</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function deleteBucket(id) {
+            if (confirm('Hapus paket bucket ini?')) {
+                state.buckets = state.buckets.filter(b => b.id !== id);
+                saveToStorage();
+                showToast('Paket bucket dihapus.');
+            }
+        }
+
+        // --- TRANSAKSI FUNCTIONS ---
+        function populateTransaksiDropdowns() {
+            const selBeli = document.getElementById('tb-barang-id');
+            selBeli.innerHTML = `<option value="">-- Pilih Barang Master --</option>`;
+            state.masterBarang.forEach(m => {
+                selBeli.innerHTML += `<option value="${m.id}">${m.nama} (Stok: ${m.stok})</option>`;
+            });
+
+            updateJualDropdown();
+        }
+
+        function autoFillBeli() {
+            const id = document.getElementById('tb-barang-id').value;
+            const item = state.masterBarang.find(m => m.id === id);
+            document.getElementById('tb-harga').value = item ? item.hargaBeli : '';
+            calcTotalBeli();
+        }
+
+        function calcTotalBeli() {
+            const qty = parseFloat(document.getElementById('tb-qty').value) || 0;
+            const hrg = parseFloat(document.getElementById('tb-harga').value) || 0;
+            document.getElementById('tb-total-disp').innerText = formatRp(qty * hrg);
+        }
+
+        function processPembelian(e) {
+            e.preventDefault();
+            const id = document.getElementById('tb-barang-id').value;
+            const qty = parseInt(document.getElementById('tb-qty').value) || 0;
+            const hrg = parseFloat(document.getElementById('tb-harga').value) || 0;
+            const total = qty * hrg;
+
+            if (state.kas < total) {
+                showToast('Saldo Kas tidak mencukupi untuk pembelian ini!');
+                return;
+            }
+
+            const item = state.masterBarang.find(m => m.id === id);
+            if (!item) return;
+
+            item.stok += qty;
+            state.kas -= total;
+
+            state.transaksi.unshift({
+                id: 'tr_' + Date.now(),
+                waktu: new Date().toLocaleString('id-ID'),
+                tipe: 'BELI',
+                itemNama: item.nama,
+                qty,
+                hargaUnit: hrg,
+                total,
+                hppUnit: hrg
+            });
+
+            saveToStorage();
+            document.getElementById('form-beli').reset();
+            calcTotalBeli();
+            showToast('Pembelian stok berhasil diproses!');
+        }
+
+        function updateJualDropdown() {
+            const tipe = document.getElementById('tj-tipe').value;
+            const sel = document.getElementById('tj-produk-id');
+            sel.innerHTML = `<option value="">-- Pilih Produk --</option>`;
+
+            if (tipe === 'bucket') {
+                state.buckets.forEach(b => {
+                    sel.innerHTML += `<option value="${b.id}">${b.nama} (Stok: ${b.stok})</option>`;
+                });
+            } else {
+                state.masterBarang.forEach(m => {
+                    sel.innerHTML += `<option value="${m.id}">${m.nama} (Stok: ${m.stok})</option>`;
+                });
+            }
+            autoFillJual();
+        }
+
+        function autoFillJual() {
+            const tipe = document.getElementById('tj-tipe').value;
+            const id = document.getElementById('tj-produk-id').value;
+
+            if (tipe === 'bucket') {
+                const b = state.buckets.find(x => x.id === id);
+                document.getElementById('tj-harga').value = b ? b.hargaJual : '';
+            } else {
+                const m = state.masterBarang.find(x => x.id === id);
+                document.getElementById('tj-harga').value = m ? m.hargaJual : '';
+            }
+            calcTotalJual();
+        }
+
+        function calcTotalJual() {
+            const qty = parseFloat(document.getElementById('tj-qty').value) || 0;
+            const hrg = parseFloat(document.getElementById('tj-harga').value) || 0;
+            document.getElementById('tj-total-disp').innerText = formatRp(qty * hrg);
+        }
+
+        function processPenjualan(e) {
+            e.preventDefault();
+            const tipe = document.getElementById('tj-tipe').value;
+            const id = document.getElementById('tj-produk-id').value;
+            const qty = parseInt(document.getElementById('tj-qty').value) || 0;
+            const hrg = parseFloat(document.getElementById('tj-harga').value) || 0;
+            const total = qty * hrg;
+
+            let itemNama = '';
+            let hppUnit = 0;
+
+            if (tipe === 'bucket') {
+                const b = state.buckets.find(x => x.id === id);
+                if (!b || b.stok < qty) {
+                    showToast('Stok bucket tidak cukup!');
+                    return;
+                }
+                b.stok -= qty;
+                itemNama = b.nama;
+                hppUnit = b.hppUnit;
+            } else {
+                const m = state.masterBarang.find(x => x.id === id);
+                if (!m || m.stok < qty) {
+                    showToast('Stok barang eceran tidak cukup!');
+                    return;
+                }
+                m.stok -= qty;
+                itemNama = m.nama;
+                hppUnit = m.hargaBeli;
+            }
+
+            state.kas += total;
+
+            state.transaksi.unshift({
+                id: 'tr_' + Date.now(),
+                waktu: new Date().toLocaleString('id-ID'),
+                tipe: 'JUAL',
+                itemNama,
+                qty,
+                hargaUnit: hrg,
+                total,
+                hppUnit
+            });
+
+            saveToStorage();
+            document.getElementById('form-jual').reset();
+            calcTotalJual();
+            showToast('Penjualan berhasil disimpan!');
+        }
+
+        function renderRiwayat() {
+            const tbody = document.getElementById('tbl-riwayat');
+            tbody.innerHTML = '';
+
+            if (state.transaksi.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Belum ada riwayat transaksi.</td></tr>`;
+                return;
+            }
+
+            state.transaksi.forEach(t => {
+                const isJual = t.tipe === 'JUAL';
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-slate-500">${t.waktu}</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${isJual ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">${t.tipe}</span></td>
+                    <td class="py-3 px-3 font-semibold text-slate-200">${t.itemNama}</td>
+                    <td class="py-3 px-3 text-center text-slate-300">${t.qty}</td>
+                    <td class="py-3 px-3 text-slate-400">${formatRp(t.hargaUnit)}</td>
+                    <td class="py-3 px-3 text-right font-bold ${isJual ? 'text-emerald-400' : 'text-amber-400'}">${isJual ? '+' : '-'}${formatRp(t.total)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearAllTransactions() {
+            if (confirm('Hapus seluruh riwayat transaksi? (Saldo Kas & Stok tidak berubah)')) {
+                state.transaksi = [];
+                saveToStorage();
+                showToast('Riwayat transaksi dibersihkan.');
+            }
+        }
+
+        // --- LAPORAN & PRINT ---
+        function renderLaporanPreviews(pendapatan, hpp, labaBersih, inventaris) {
+            document.getElementById('prv-pendapatan').innerText = formatRp(pendapatan);
+            document.getElementById('prv-hpp').innerText = `(${formatRp(hpp)})`;
+            document.getElementById('prv-laba-kotor').innerText = formatRp(labaBersih);
+
+            document.getElementById('prv-neraca-kas').innerText = formatRp(state.kas);
+            document.getElementById('prv-neraca-stok').innerText = formatRp(inventaris);
+            const totalAset = state.kas + inventaris;
+            document.getElementById('prv-neraca-total-aset').innerText = formatRp(totalAset);
+
+            document.getElementById('prv-neraca-modal').innerText = formatRp(state.modalAwal);
+            document.getElementById('prv-neraca-laba').innerText = formatRp(labaBersih);
+            const totalPasiva = state.modalAwal + labaBersih;
+            document.getElementById('prv-neraca-total-pasiva').innerText = formatRp(totalPasiva);
+        }
+
+        function printLaporan(type) {
+            const printContainer = document.getElementById('print-content');
+            const now = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            let totalPendapatan = 0;
+            let totalHPP = 0;
+            state.transaksi.filter(t => t.tipe === 'JUAL').forEach(t => {
+                totalPendapatan += t.total;
+                totalHPP += (t.hppUnit * t.qty);
+            });
+            const labaBersih = totalPendapatan - totalHPP;
+
+            let totalInventaris = 0;
+            state.masterBarang.forEach(b => { totalInventaris += (b.stok * b.hargaBeli); });
+            state.buckets.forEach(bk => { totalInventaris += (bk.stok * bk.hppUnit); });
+
+            if (type === 'laba-rugi') {
+                printContainer.innerHTML = `
+                    <div class="border-b-2 border-slate-800 pb-4 mb-6 text-center">
+                        <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-800">SnackBucket Studio</h1>
+                        <h2 class="text-lg font-semibold text-slate-600">LAPORAN LABA / RUGI</h2>
+                        <p class="text-xs text-slate-500">Per Tanggal: ${now}</p>
+                    </div>
+
+                    <table class="w-full text-sm mb-6 border-collapse">
+                        <tbody>
+                            <tr class="border-b border-slate-200">
+                                <td class="py-2 font-bold text-slate-700" colspan="2">PENDAPATAN USAHA</td>
+                            </tr>
+                            <tr class="border-b border-slate-100">
+                                <td class="py-2 pl-4">Pendapatan Penjualan Bucket & Snack</td>
+                                <td class="py-2 text-right font-medium">${formatRp(totalPendapatan)}</td>
+                            </tr>
+                            <tr class="border-b-2 border-slate-300 font-bold">
+                                <td class="py-2">TOTAL PENDAPATAN</td>
+                                <td class="py-2 text-right text-emerald-700">${formatRp(totalPendapatan)}</td>
+                            </tr>
+
+                            <tr><td colspan="2" class="py-2"></td></tr>
+
+                            <tr class="border-b border-slate-200">
+                                <td class="py-2 font-bold text-slate-700" colspan="2">HARGA POKOK PENJUALAN (HPP / COGS)</td>
+                            </tr>
+                            <tr class="border-b border-slate-100">
+                                <td class="py-2 pl-4">Biaya Bahan Baku / Modal HPP Produk Terjual</td>
+                                <td class="py-2 text-right font-medium">(${formatRp(totalHPP)})</td>
+                            </tr>
+                            <tr class="border-b-2 border-slate-300 font-bold">
+                                <td class="py-2">TOTAL BEBAN HPP</td>
+                                <td class="py-2 text-right text-red-600">(${formatRp(totalHPP)})</td>
+                            </tr>
+
+                            <tr><td colspan="2" class="py-4"></td></tr>
+
+                            <tr class="bg-slate-100 font-bold text-base border-t-2 border-b-2 border-slate-800">
+                                <td class="py-3 px-2">LABA / RUGI BERSIH USAHA</td>
+                                <td class="py-3 px-2 text-right ${labaBersih >= 0 ? 'text-emerald-700' : 'text-red-600'}">${formatRp(labaBersih)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-12 flex justify-between text-xs text-slate-500 pt-8 border-t border-slate-200">
+                        <div>Dicetak otomatis oleh Sistem Keuangan SnackBucket</div>
+                        <div class="text-center">
+                            <p class="mb-10">Pemilik Usaha,</p>
+                            <p class="font-bold underline">(.......................................)</p>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'neraca') {
+                const totalAset = state.kas + totalInventaris;
+                const totalPasiva = state.modalAwal + labaBersih;
+
+                printContainer.innerHTML = `
+                    <div class="border-b-2 border-slate-800 pb-4 mb-6 text-center">
+                        <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-800">SnackBucket Studio</h1>
+                        <h2 class="text-lg font-semibold text-slate-600">LAPORAN NERACA KEUANGAN</h2>
+                        <p class="text-xs text-slate-500">Per Tanggal: ${now}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <h3 class="font-bold text-md border-b-2 border-slate-800 pb-1 mb-3 text-slate-800">ASET (AKTIVA)</h3>
+                            <table class="w-full text-xs">
+                                <tbody>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Kas & Setara Kas</td>
+                                        <td class="py-2 text-right">${formatRp(state.kas)}</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Persediaan Stok Barang & Bucket</td>
+                                        <td class="py-2 text-right">${formatRp(totalInventaris)}</td>
+                                    </tr>
+                                    <tr class="font-bold bg-slate-100 border-t border-slate-400">
+                                        <td class="py-2.5 px-1">JUMLAH ASET</td>
+                                        <td class="py-2.5 px-1 text-right">${formatRp(totalAset)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-md border-b-2 border-slate-800 pb-1 mb-3 text-slate-800">EKUITAS & KEWAJIBAN</h3>
+                            <table class="w-full text-xs">
+                                <tbody>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Modal Awal Disetor</td>
+                                        <td class="py-2 text-right">${formatRp(state.modalAwal)}</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Laba Ditahan / Berjalan</td>
+                                        <td class="py-2 text-right">${formatRp(labaBersih)}</td>
+                                    </tr>
+                                    <tr class="font-bold bg-slate-100 border-t border-slate-400">
+                                        <td class="py-2.5 px-1">JUMLAH EKUITAS</td>
+                                        <td class="py-2.5 px-1 text-right">${formatRp(totalPasiva)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mt-12 flex justify-between text-xs text-slate-500 pt-8 border-t border-slate-200">
+                        <div>Status Neraca: <strong class="${totalAset === totalPasiva ? 'text-emerald-600' : 'text-red-600'}">${totalAset === totalPasiva ? 'BALANCED (SEIMBANG)' : 'UNBALANCED'}</strong></div>
+                        <div class="text-center">
+                            <p class="mb-10">Pemilik Usaha,</p>
+                            <p class="font-bold underline">(.......................................)</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('print-area').classList.remove('hidden');
+            window.print();
+            document.getElementById('print-area').classList.add('hidden');
+        }
+
+        // --- MODAL MODAL AWAL DIALOG ---
+        function openModalAwal() {
+            document.getElementById('input-modal-awal').value = state.modalAwal;
+            document.getElementById('modal-awal-dialog').classList.remove('hidden');
+        }
+
+        function closeModalAwal() {
+            document.getElementById('modal-awal-dialog').classList.add('hidden');
+        }
+
+        function saveModalAwal() {
+            const val = parseFloat(document.getElementById('input-modal-awal').value) || 0;
+            const selisih = val - state.modalAwal;
+            state.modalAwal = val;
+            state.kas += selisih;
+
+            saveToStorage();
+            closeModalAwal();
+            showToast('Modal awal berhasil diubah!');
+        }
+    </script>
+</body>
+</html>
