@@ -492,33 +492,38 @@
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl space-y-6">
             <div class="text-center space-y-2">
                 <div class="inline-flex p-3 bg-pink-600/20 text-pink-500 rounded-2xl border border-pink-500/30 mb-2">
-                    <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                    <i class="fa-solid fa-user-shield text-3xl"></i>
                 </div>
-                <h2 id="auth-title" class="text-2xl font-black text-white tracking-tight">Masuk ke Akun Toko</h2>
-                <p id="auth-subtitle" class="text-xs text-slate-400">Sinkronkan data transaksi dan stok Anda di semua perangkat secara real-time.</p>
+                <h2 id="auth-title" class="text-2xl font-black text-white tracking-tight">Akun Toko & History Cloud</h2>
+                <p id="auth-subtitle" class="text-xs text-slate-400">Masuk dengan email akun Anda untuk memulihkan seluruh riwayat transaksi & stok barang di perangkat ini.</p>
             </div>
 
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Email Toko / Pengguna</label>
-                    <input type="email" id="auth-email" required placeholder="toko@bucket.com" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Email Toko / Akun</label>
+                    <input type="email" id="auth-email" placeholder="toko@bucket.com" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Kata Sandi (Password)</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Kata Sandi (Password) <span class="text-[10px] text-slate-400 font-normal">(Min. 6 Karakter)</span></label>
+                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
                 </div>
 
                 <div id="auth-error" class="hidden text-xs text-red-400 bg-red-950/50 p-3 rounded-xl border border-red-800/80 text-center font-medium"></div>
 
                 <button type="submit" id="auth-btn-submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-pink-600/30 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i> <span>Masuk & Sinkronkan</span>
+                    <i class="fa-solid fa-arrows-rotate"></i> <span>Masuk & Pulihkan History</span>
                 </button>
             </form>
 
-            <div class="border-t border-slate-800 pt-4 text-center">
-                <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-pink-400 hover:text-pink-300 font-semibold">
-                    Belum punya akun? Buat Akun Baru
+            <div class="space-y-3 pt-2 text-center">
+                <button type="button" onclick="loginAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-xs border border-slate-700 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-slash"></i> Gunakan Tanpa Akun (Sesi Lokal sementara)
                 </button>
+                <div class="border-t border-slate-800 pt-3">
+                    <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-pink-400 hover:text-pink-300 font-semibold">
+                        Belum punya akun? Buat Akun Baru
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -550,13 +555,23 @@
 
         // APP CONFIG & GLOBAL VARIABLES
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'bucket-snack-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo" };
+        let firebaseConfig;
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        } catch(e) {
+            firebaseConfig = null;
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let app = null, auth = null, db = null;
+        if (firebaseConfig && firebaseConfig.apiKey) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch(e) {
+                console.warn("Firebase Setup:", e);
+            }
+        }
 
         let currentUser = null;
         let isAuthModeLogin = true;
@@ -574,7 +589,7 @@
             buckets: [
                 {
                     id: 'bk1',
-                    nama: 'Bucket Snack Valentine Mini',
+                    nama: 'Bucket Snack Wisuda Mini',
                     stok: 3,
                     hargaJual: 35000,
                     hppUnit: 18500,
@@ -590,38 +605,58 @@
 
         // AUTHENTICATION OBSERVER & INIT
         window.onload = function() {
-            // Check initial auth token
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
+            if (auth) {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('auth-modal').classList.add('hidden');
+                        document.getElementById('user-email-display').innerText = user.email || (user.isAnonymous ? 'Tamu (Cloud)' : user.uid.substring(0,8));
+                        listenCloudStorage(user.uid);
+                    } else {
+                        currentUser = null;
+                        document.getElementById('auth-modal').classList.remove('hidden');
+                        if (unsubscribeDoc) unsubscribeDoc();
+                    }
+                });
+            } else {
+                // Standalone mode tanpa Firebase SDK khusus
+                document.getElementById('user-email-display').innerText = 'Mode Lokal';
+                document.getElementById('user-status-badge').innerText = 'Penyimpanan Sesi';
             }
 
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('auth-modal').classList.add('hidden');
-                    document.getElementById('user-email-display').innerText = user.email || (user.isAnonymous ? 'Tamu' : user.uid.substring(0,8));
-                    
-                    // Listen real-time cloud data for logged user
-                    listenCloudStorage(user.uid);
-                } else {
-                    currentUser = null;
-                    document.getElementById('auth-modal').classList.remove('hidden');
-                    if (unsubscribeDoc) unsubscribeDoc();
-                }
-            });
-
             window.addBucketRow();
+            window.renderAll();
+        };
+
+        // GUEST / ANONYMOUS LOGIN
+        window.loginAsGuest = function() {
+            if (auth) {
+                signInAnonymously(auth).then(() => {
+                    window.showToast('Masuk sebagai Tamu!');
+                }).catch((err) => {
+                    // Fallback jika anonymous auth disabled
+                    document.getElementById('auth-modal').classList.add('hidden');
+                    window.showToast('Masuk Mode Lokal.');
+                });
+            } else {
+                document.getElementById('auth-modal').classList.add('hidden');
+                window.showToast('Masuk Mode Lokal.');
+            }
         };
 
         // CLOUD STORAGE SYNC (Firestore)
         function listenCloudStorage(userId) {
+            if (!db) return;
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'store_data', 'main_record');
             
             unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     window.state = docSnap.data();
                 } else {
-                    // Initialize empty cloud store for new account
                     saveToStorage();
                 }
                 window.renderAll();
@@ -631,7 +666,10 @@
         }
 
         window.saveToStorage = async function() {
-            if (!currentUser) return;
+            if (!currentUser || !db) {
+                window.renderAll();
+                return;
+            }
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'store_data', 'main_record');
             try {
                 await setDoc(docRef, window.state);
@@ -670,6 +708,11 @@
             const errDiv = document.getElementById('auth-error');
             errDiv.classList.add('hidden');
 
+            if (!auth) {
+                window.loginAsGuest();
+                return;
+            }
+
             try {
                 if (isAuthModeLogin) {
                     await signInWithEmailAndPassword(auth, email, password);
@@ -678,16 +721,89 @@
                 }
                 window.showToast(isAuthModeLogin ? 'Berhasil Login!' : 'Akun berhasil dibuat!');
             } catch (error) {
-                errDiv.innerText = error.message.replace('Firebase: ', '');
+                let msg = error.message.replace('Firebase: ', '');
+                if (msg.includes('api-key-not-valid')) {
+                    msg = "Sistem beralih ke Mode Tamu otomatis...";
+                    setTimeout(() => window.loginAsGuest(), 1000);
+                }
+                errDiv.innerText = msg;
                 errDiv.classList.remove('hidden');
             }
         };
 
         window.handleSignOut = function() {
-            if (confirm('Keluar dari akun ini?')) {
-                signOut(auth).then(() => {
-                    window.showToast('Berhasil keluar akun.');
-                });
+            if (confirm('Keluar dari akun / aplikasi?')) {
+                if (auth && currentUser) {
+                    signOut(auth).then(() => {
+                        window.showToast('Berhasil keluar akun.');
+                    });
+                } else {
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                }
+            }
+        };
+
+        // AUTH FORM HANDLERS
+        window.toggleAuthMode = function() {
+            isAuthModeLogin = !isAuthModeLogin;
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const btnSpan = document.querySelector('#auth-btn-submit span');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            document.getElementById('auth-error').classList.add('hidden');
+
+            if (isAuthModeLogin) {
+                title.innerText = 'Akun Toko & History Cloud';
+                subtitle.innerText = 'Masuk dengan email akun Anda untuk memulihkan seluruh riwayat transaksi & stok barang di perangkat ini.';
+                btnSpan.innerText = 'Masuk & Pulihkan History';
+                toggleBtn.innerText = 'Belum punya akun? Buat Akun Baru';
+            } else {
+                title.innerText = 'Daftar Akun Baru';
+                subtitle.innerText = 'Buat akun toko baru agar data history keuangan tersimpan aman di Cloud.';
+                btnSpan.innerText = 'Daftarkan Akun';
+                toggleBtn.innerText = 'Sudah punya akun? Pulihkan History di sini';
+            }
+        };
+
+        window.handleAuthSubmit = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            if (!auth) {
+                window.loginAsGuest();
+                return;
+            }
+
+            try {
+                if (isAuthModeLogin) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+                window.showToast(isAuthModeLogin ? 'Akun berhasil tersambung! History dipulihkan.' : 'Akun berhasil dibuat!');
+            } catch (error) {
+                let msg = error.message.replace('Firebase: ', '');
+                if (msg.includes('api-key-not-valid')) {
+                    msg = "Menggunakan mode offline / lokal...";
+                    setTimeout(() => window.loginAsGuest(), 1000);
+                }
+                errDiv.innerText = msg;
+                errDiv.classList.remove('hidden');
+            }
+        };
+
+        window.handleSignOut = function() {
+            if (confirm('Keluar dari akun ini? Data di perangkat ini akan kembali ke tampilan default.')) {
+                if (auth && currentUser) {
+                    signOut(auth).then(() => {
+                        window.showToast('Telah keluar dari akun.');
+                    });
+                } else {
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                }
             }
         };
 
