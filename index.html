@@ -17,7 +17,6 @@
             color: #f8fafc;
         }
         
-        /* Custom scrollbar untuk tema gelap */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -33,7 +32,6 @@
             background: #475569;
         }
 
-        /* Styling khusus cetak (Media Print override ke background putih) */
         @media print {
             body * { visibility: hidden; }
             .print-area, .print-area * { 
@@ -60,7 +58,7 @@
                     <p class="text-xs text-slate-400">Keuangan & Stock Inventaris (Dark Mode)</p>
                 </div>
             </div>
-            <!-- Quick Info Modal -->
+            
             <div class="flex items-center space-x-4 bg-slate-800/80 px-4 py-2 rounded-2xl border border-slate-700/80 shadow-inner">
                 <div class="text-right">
                     <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Saldo Kas Saat Ini</span>
@@ -152,7 +150,6 @@
                 </div>
             </div>
 
-            <!-- Quick Action & Alert -->
             <div class="bg-gradient-to-r from-slate-900 via-purple-950/60 to-pink-950/50 rounded-2xl p-6 border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -169,7 +166,6 @@
         <!-- SECTION 2: BARANG DEFAULT (MASTER DATA) -->
         <section id="sec-master" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form Add Barang -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg h-fit">
                     <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-plus-circle text-pink-500"></i> Tambah Barang Default
@@ -177,16 +173,16 @@
                     <form id="form-barang" onsubmit="saveBarangDefault(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Barang / Material</label>
-                            <input type="text" id="m-nama" required placeholder="Contoh: Chocolatos, Wrapping Paper" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            <input type="text" id="m-nama" required placeholder="Contoh: Chocolatos, Wrapping Paper" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli / Modal (Rp)</label>
-                                <input type="number" id="m-harga-beli" min="0" required placeholder="2000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                                <input type="number" step="any" id="m-harga-beli" min="0" required placeholder="2000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Awal</label>
-                                <input type="number" id="m-stok" min="0" value="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                                <input type="number" id="m-stok" min="0" value="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
                             </div>
                         </div>
                         <button type="submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-lg shadow-pink-600/30">
@@ -195,7 +191,6 @@
                     </form>
                 </div>
 
-                <!-- Table Master Barang -->
                 <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
                         <span><i class="fa-solid fa-list text-pink-500 mr-2"></i> Daftar Barang Master Default</span>
@@ -212,7 +207,6 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-master-barang" class="divide-y divide-slate-800/60">
-                                <!-- Dynamic items -->
                             </tbody>
                         </table>
                     </div>
@@ -223,7 +217,6 @@
         <!-- SECTION 3: MANAGEMENT BUCKET (PAKET) -->
         <section id="sec-bucket" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form Meracik Bucket -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-wand-magic-sparkles text-pink-500"></i> Buat / Racik Bucket Baru
@@ -231,15 +224,13 @@
                     <form id="form-bucket" onsubmit="saveBucket(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Bucket Snack</label>
-                            <input type="text" id="b-nama" required placeholder="Contoh: Bucket Wisuda Hemat A" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            <input type="text" id="b-nama" required placeholder="Contoh: Bucket Wisuda Hemat A" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
                         </div>
 
-                        <!-- Dynamic Item Picker -->
                         <div class="border border-slate-800 p-3 rounded-xl bg-slate-950/60 space-y-3">
                             <label class="block text-xs font-bold text-slate-300">Komponen / Isian Stock Dalam Bucket</label>
                             
                             <div class="space-y-2" id="bucket-items-container">
-                                <!-- Dynamic rows inserted by JS -->
                             </div>
 
                             <button type="button" onclick="addBucketRow()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 rounded-lg text-xs transition border border-slate-700">
@@ -254,7 +245,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual Bucket (Rp)</label>
-                                <input type="number" id="b-harga-jual" min="0" required placeholder="50000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+                                <input type="number" step="any" id="b-harga-jual" min="0" required placeholder="50000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
                             </div>
                         </div>
 
@@ -269,13 +260,11 @@
                     </form>
                 </div>
 
-                <!-- Daftar Bucket Ready -->
                 <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
                         <span><i class="fa-solid fa-boxes-packing text-pink-500 mr-2"></i> Daftar Stok Bucket Snack</span>
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="cards-bucket-container">
-                        <!-- Dynamic Cards -->
                     </div>
                 </div>
             </div>
@@ -284,11 +273,11 @@
         <!-- SECTION 4: TRANSAKSI (JUAL & BELI) -->
         <section id="sec-transaksi" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Transaksi Pembelian Stock (Restock) -->
+                <!-- Pembelian -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <div class="border-b border-slate-800 pb-3 mb-4">
                         <h2 class="text-md font-bold text-slate-100 flex items-center gap-2">
-                            <i class="fa-solid fa-cart-flatbed text-amber-400"></i> Transaksi Pembelian Stok (Beli Material)
+                            <i class="fa-solid fa-cart-flatbed text-amber-400"></i> Transaksi Pembelian Stok
                         </h2>
                         <p class="text-xs text-slate-400">Menambah stok barang & mengurangi Kas toko.</p>
                     </div>
@@ -306,7 +295,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli per Unit (Rp)</label>
-                                <input type="number" id="tb-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
+                                <input type="number" step="any" id="tb-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
                             </div>
                         </div>
                         <div class="p-3 bg-amber-950/40 border border-amber-900/60 rounded-xl flex justify-between items-center text-xs text-amber-300 font-semibold">
@@ -319,7 +308,7 @@
                     </form>
                 </div>
 
-                <!-- Transaksi Penjualan Barang / Bucket -->
+                <!-- Penjualan -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <div class="border-b border-slate-800 pb-3 mb-4">
                         <h2 class="text-md font-bold text-slate-100 flex items-center gap-2">
@@ -338,7 +327,6 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Pilih Produk</label>
                             <select id="tj-produk-id" onchange="autoFillJual()" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" required>
-                                <!-- Populated dynamically -->
                             </select>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
@@ -348,7 +336,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual per Unit (Rp)</label>
-                                <input type="number" id="tj-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
+                                <input type="number" step="any" id="tj-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
                             </div>
                         </div>
                         <div class="p-3 bg-emerald-950/40 border border-emerald-900/60 rounded-xl flex justify-between items-center text-xs text-emerald-300 font-semibold">
@@ -362,7 +350,6 @@
                 </div>
             </div>
 
-            <!-- Tabel Riwayat Transaksi -->
             <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                 <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
                     <span><i class="fa-solid fa-clock-rotate-left text-pink-500 mr-2"></i> Riwayat Transaksi Jual / Beli</span>
@@ -388,22 +375,20 @@
                             </tr>
                         </thead>
                         <tbody id="tbl-riwayat" class="divide-y divide-slate-800/60">
-                            <!-- Dynamic Trans -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- SECTION SPECIAL: GAJI KARYAWAN (BEBAN OPERASIONAL) -->
+        <!-- SECTION 5: GAJI KARYAWAN -->
         <section id="sec-gaji" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form Bayar Gaji -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg h-fit">
                     <h2 class="text-md font-bold text-slate-100 mb-2 flex items-center gap-2">
                         <i class="fa-solid fa-user-plus text-rose-400"></i> Catat Pembayaran Gaji
                     </h2>
-                    <p class="text-xs text-slate-400 mb-4">Pengeluaran gaji langsung mengurangi Kas & dihitung sebagai Beban Operasional (Bukan HPP Stok).</p>
+                    <p class="text-xs text-slate-400 mb-4">Pengeluaran gaji langsung mengurangi Kas & dihitung sebagai Beban Operasional.</p>
                     <form id="form-gaji" onsubmit="processBayarGaji(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Karyawan</label>
@@ -411,7 +396,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal Gaji / Upah (Rp)</label>
-                            <input type="number" id="g-nominal" min="1" required placeholder="500000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-rose-500">
+                            <input type="number" step="any" id="g-nominal" min="0.01" required placeholder="500000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-rose-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 mb-1">Keterangan / Periode</label>
@@ -423,7 +408,6 @@
                     </form>
                 </div>
 
-                <!-- Tabel Riwayat Gaji -->
                 <div class="lg:col-span-2 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                     <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
                         <span><i class="fa-solid fa-receipt text-rose-400 mr-2"></i> Riwayat Pengeluaran Gaji</span>
@@ -441,7 +425,6 @@
                                 </tr>
                             </thead>
                             <tbody id="tbl-riwayat-gaji" class="divide-y divide-slate-800/60">
-                                <!-- Dynamic items -->
                             </tbody>
                         </table>
                     </div>
@@ -449,12 +432,12 @@
             </div>
         </section>
 
-        <!-- SECTION 5: LAPORAN KEUANGAN & PRINT -->
+        <!-- SECTION 6: LAPORAN KEUANGAN -->
         <section id="sec-laporan" class="tab-content hidden space-y-6">
             <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-100">Cetak Laporan Keuangan</h2>
-                    <p class="text-xs text-slate-400">Pilih laporan yang ingin di-preview dan dicetak ke printer atau simpan PDF (Otomatis background putih saat diprint).</p>
+                    <p class="text-xs text-slate-400">Pilih laporan yang ingin di-preview dan dicetak ke printer atau simpan PDF.</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
                     <button onclick="printLaporan('laba-rugi')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-purple-600/30 flex items-center gap-2">
@@ -466,7 +449,6 @@
                 </div>
             </div>
 
-            <!-- Previews -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Preview Laba Rugi -->
                 <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
@@ -559,7 +541,7 @@
         </div>
     </div>
 
-    <!-- MODAL AUTH / HUBUNGKAN AKUN TOKO (LOGIN TANPA PASSWORD) -->
+    <!-- MODAL AUTH / HUBUNGKAN AKUN TOKO -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center z-[100]">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl space-y-6">
             <div class="text-center space-y-2">
@@ -603,7 +585,7 @@
         <span id="toast-msg">Notifikasi</span>
     </div>
 
-    <!-- FIREBASE MODULE & APP LOGIC -->
+    <!-- FIREBASE MODULE & LOGIK APLIKASI -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -619,8 +601,6 @@
             onSnapshot 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // APP INITIALIZATION & FIREBASE BINDING
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bucket-snack-app';
         let firebaseConfig = null;
         try {
             firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
@@ -643,7 +623,7 @@
         let activeAccountId = null;
         let unsubscribeDoc = null;
 
-        // GLOBAL STATE INITIALIZATION
+        // GLOBAL STATE
         window.state = {
             modalAwal: 0,
             kas: 0,
@@ -653,9 +633,14 @@
             gaji: []
         };
 
-        // EXPLICIT GLOBAL FUNCTION ATTACHMENTS (Mencegah ReferenceError)
+        // EXPLICIT GLOBAL FUNCTION ATTACHMENTS
         window.formatRp = function(val) {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0);
+            return new Intl.NumberFormat('id-ID', { 
+                style: 'currency', 
+                currency: 'IDR', 
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2 
+            }).format(val || 0);
         };
 
         window.showToast = function(msg) {
@@ -900,36 +885,25 @@
                 let itemsListHtml = '';
                 (bk.items || []).forEach(it => {
                     itemsListHtml += `<li class="flex justify-between text-[11px] text-slate-400"><span>- ${it.nama}</span> <span class="font-bold text-slate-300">x${it.qty}</span></li>`;
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli / Modal (Rp)</label>
-                                <input type="number" step="any" id="m-harga-beli" min="0" required placeholder="2000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Awal</label>
-                                <input type="number" id="m-stok" min="0" value="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
-                            </div>
+                });
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 relative";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-100">${bk.nama}</h3>
+                            <p class="text-[11px] text-pink-400 font-semibold">Harga Jual: ${window.formatRp(bk.hargaJual)}</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Bucket Dibuat</label>
-                                <input type="number" id="b-stok" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual Bucket (Rp)</label>
-                                <input type="number" step="any" id="b-harga-jual" min="0" required placeholder="50000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Beli (QTY)</label>
-                                <input type="number" id="tb-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli per Unit (Rp)</label>
-                                <input type="number" step="any" id="tb-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
-                            </div>
-                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold ${bk.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">Stok: ${bk.stok}</span>
+                    </div>
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800/80">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Komponen Isian:</p>
+                        <ul class="space-y-1">${itemsListHtml}</ul>
+                    </div>
+                    <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-800/80">
+                        <span class="text-slate-500 text-[11px]">HPP Bahan: <b class="text-slate-300">${window.formatRp(bk.hppUnit)}</b></span>
+                        <button onclick="window.deleteBucket('${bk.id}')" class="text-red-400 hover:text-red-300 text-xs font-semibold"><i class="fa-solid fa-trash-can mr-1"></i>Hapus</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -1141,13 +1115,9 @@
         window.clearAllTransactions = function() {
             if (confirm('Apakah Anda yakin ingin mengosongkan seluruh riwayat transaksi? Kas akan dikembalikan sesuai perhitungan sisa transaksi/gaji.')) {
                 window.state.transaksi = [];
-                
-                // Hitung ulang saldo kas berdasarkan modal awal dikurangi total pengeluaran gaji yang ada
                 let totalGaji = 0;
                 (window.state.gaji || []).forEach(g => { totalGaji += g.nominal; });
-                
                 window.state.kas = (window.state.modalAwal || 0) - totalGaji;
-                
                 window.saveToStorage();
                 window.showToast('Riwayat transaksi dibersihkan & Saldo Kas dikembalikan ke Modal Awal!');
             }
@@ -1158,7 +1128,6 @@
                 window.state.transaksi = [];
                 window.state.gaji = [];
                 window.state.kas = window.state.modalAwal || 0;
-                
                 window.saveToStorage();
                 window.showToast('Seluruh pembukuan berhasil di-reset ke Modal Awal!');
             }
@@ -1424,29 +1393,43 @@
                                         <td class="py-2 text-right">${window.formatRp(window.state.kas)}</td>
                                     </tr>
                                     <tr class="border-b border-slate-100">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Jual (QTY)</label>
-                                <input type="number" id="tj-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual per Unit (Rp)</label>
-                                <input type="number" step="any" id="tj-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
-                            </div>
+                                        <td class="py-2 font-medium">Persediaan Stok Barang & Bucket</td>
+                                        <td class="py-2 text-right">${window.formatRp(totalInventaris)}</td>
+                                    </tr>
+                                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-800">
+                                        <td class="py-2 px-1">TOTAL ASET</td>
+                                        <td class="py-2 text-right px-1">${window.formatRp(totalAset)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal Gaji / Upah (Rp)</label>
-                            <input type="number" step="any" id="g-nominal" min="0.01" required placeholder="500000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-rose-500">
+                            <h3 class="font-bold text-md border-b-2 border-slate-800 pb-1 mb-3 text-slate-800">EKUITAS (PASIVA)</h3>
+                            <table class="w-full text-xs">
+                                <tbody>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Modal Awal Disetor</td>
+                                        <td class="py-2 text-right">${window.formatRp(window.state.modalAwal)}</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 font-medium">Laba Ditahan / Berjalan</td>
+                                        <td class="py-2 text-right">${window.formatRp(labaBersih)}</td>
+                                    </tr>
+                                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-800">
+                                        <td class="py-2 px-1">TOTAL EKUITAS</td>
+                                        <td class="py-2 text-right px-1">${window.formatRp(totalPasiva)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-        // EXPLICIT GLOBAL FUNCTION ATTACHMENTS (Mencegah ReferenceError)
-        window.formatRp = function(val) {
-            return new Intl.NumberFormat('id-ID', { 
-                style: 'currency', 
-                currency: 'IDR', 
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2 
-            }).format(val || 0);
+                    </div>
+                `;
+            }
+
+            document.getElementById('print-area').classList.remove('hidden');
+            window.print();
+            document.getElementById('print-area').classList.add('hidden');
         };
 
         // DOM CONTENT LOADED INITIALIZATION
