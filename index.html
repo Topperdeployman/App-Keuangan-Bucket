@@ -648,6 +648,299 @@
             gaji: []
         };
 
+        // HELPER UTILITY FUNCTIONS
+        window.formatRp = function(val) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0);
+        };
+
+        window.showToast = function(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        };
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active-tab', 'bg-pink-600', 'text-white', 'shadow-pink-600/20');
+                el.classList.add('bg-slate-900', 'text-slate-400');
+            });
+
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
+                activeBtn.classList.add('active-tab', 'bg-pink-600', 'text-white', 'shadow-pink-600/20');
+            }
+        };
+
+        // MODAL AWAL & STORAGE HANDLERS
+        window.openModalAwal = function() {
+            document.getElementById('input-modal-awal').value = window.state.modalAwal || 0;
+            document.getElementById('modal-awal-dialog').classList.remove('hidden');
+        };
+
+        window.closeModalAwal = function() {
+            document.getElementById('modal-awal-dialog').classList.add('hidden');
+        };
+
+        window.saveModalAwal = function() {
+            const val = parseFloat(document.getElementById('input-modal-awal').value) || 0;
+            const diff = val - (window.state.modalAwal || 0);
+            window.state.modalAwal = val;
+            window.state.kas += diff; // Menyesuaikan Kas sesuai selisih perubahan modal
+            window.saveToStorage();
+            window.closeModalAwal();
+            window.showToast('Modal awal berhasil diperbarui!');
+        };
+
+        window.saveToStorage = function() {
+            if (activeAccountId) {
+                localStorage.setItem(`snackbucket_data_${activeAccountId}`, JSON.stringify(window.state));
+                if (db && activeAccountId) {
+                    try {
+                        setDoc(doc(db, "accounts", activeAccountId), window.state, { merge: true });
+                    } catch(e) {
+                        console.warn("Cloud Sync Fail:", e);
+                    }
+                }
+            }
+            window.renderAll();
+        };
+
+        window.loadFromLocalStorage = function(accId) {
+            const localData = localStorage.getItem(`snackbucket_data_${accId}`);
+            if (localData) {
+                try {
+                    window.state = Object.assign(window.state, JSON.parse(localData));
+                } catch(e) {}
+            }
+            window.renderAll();
+        };
+
+        window.listenCloudStorage = function(accId) {
+            window.loadFromLocalStorage(accId);
+            if (db) {
+                if (unsubscribeDoc) unsubscribeDoc();
+                unsubscribeDoc = onSnapshot(doc(db, "accounts", accId), (docSnap) => {
+                    if (docSnap.exists()) {
+                        window.state = Object.assign(window.state, docSnap.data());
+                        localStorage.setItem(`snackbucket_data_${accId}`, JSON.stringify(window.state));
+                        window.renderAll();
+                    }
+                });
+            }
+        };
+
+        window.handleAuthSubmit = function(e) {
+            e.preventDefault();
+            const accId = document.getElementById('auth-email').value.trim().toLowerCase();
+            if (!accId) return;
+            activeAccountId = accId;
+            localStorage.setItem('snackbucket_account_id', accId);
+            document.getElementById('user-email-display').innerText = accId;
+            document.getElementById('auth-modal').classList.add('hidden');
+            if (db) {
+                window.listenCloudStorage(accId);
+            } else {
+                window.loadFromLocalStorage(accId);
+            }
+            window.showToast(`Berhasil tersambung dengan Akun: ${accId}`);
+        };
+
+        window.loginAsGuest = function() {
+            activeAccountId = 'guest_session';
+            localStorage.setItem('snackbucket_account_id', activeAccountId);
+            document.getElementById('user-email-display').innerText = 'Mode Tamu';
+            document.getElementById('user-status-badge').innerText = 'Sesi Lokal';
+            document.getElementById('user-status-badge').className = 'text-[9px] text-amber-400 font-bold block';
+            document.getElementById('auth-modal').classList.add('hidden');
+            window.loadFromLocalStorage(activeAccountId);
+            window.showToast('Masuk dalam Mode Tamu (Sesi Lokal)');
+        };
+
+        window.handleSignOut = function() {
+            localStorage.removeItem('snackbucket_account_id');
+            activeAccountId = null;
+            if (unsubscribeDoc) unsubscribeDoc();
+            document.getElementById('auth-modal').classList.remove('hidden');
+        };
+
+        // RACIK BUCKET DYNAMIC ROWS & CALCULATIONS
+        window.addBucketRow = function() {
+            const container = document.getElementById('bucket-items-container');
+            if (!container) return;
+
+            const rowId = 'brow_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            const div = document.createElement('div');
+            div.id = rowId;
+            div.className = "flex items-center gap-2 bg-slate-900 p-2 rounded-xl border border-slate-800";
+
+            let optionsHtml = '<option value="">-- Pilih Barang Master --</option>';
+            (window.state.masterBarang || []).forEach(b => {
+                optionsHtml += `<option value="${b.id}">${b.nama} (Hrg Beli: ${window.formatRp(b.hargaBeli)})</option>`;
+            });
+
+            div.innerHTML = `
+                <select class="b-item-id flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-pink-500" onchange="window.calcBucketHPP()" required>
+                    ${optionsHtml}
+                </select>
+                <input type="number" min="1" value="1" placeholder="QTY" class="b-item-qty w-16 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-pink-500 text-center" oninput="window.calcBucketHPP()" required>
+                <button type="button" onclick="window.removeBucketRow('${rowId}')" class="text-red-400 hover:text-red-300 p-1.5"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+            container.appendChild(div);
+            window.calcBucketHPP();
+        };
+
+        window.removeBucketRow = function(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+                window.calcBucketHPP();
+            }
+        };
+
+        window.calcBucketHPP = function() {
+            let totalHPP = 0;
+            const rows = document.querySelectorAll('#bucket-items-container > div');
+            rows.forEach(r => {
+                const select = r.querySelector('.b-item-id');
+                const qtyInput = r.querySelector('.b-item-qty');
+                if (select && qtyInput) {
+                    const barangId = select.value;
+                    const qty = parseInt(qtyInput.value) || 0;
+                    const item = (window.state.masterBarang || []).find(b => b.id === barangId);
+                    if (item) {
+                        totalHPP += (item.hargaBeli * qty);
+                    }
+                }
+            });
+            const hppDisplay = document.getElementById('b-hpp-calc');
+            if (hppDisplay) hppDisplay.innerText = window.formatRp(totalHPP);
+            return totalHPP;
+        };
+
+        window.saveBucket = function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('b-nama').value.trim();
+            const stok = parseInt(document.getElementById('b-stok').value) || 0;
+            const hargaJual = parseFloat(document.getElementById('b-harga-jual').value) || 0;
+
+            const items = [];
+            const rows = document.querySelectorAll('#bucket-items-container > div');
+            let isStokValid = true;
+
+            rows.forEach(r => {
+                const barangId = r.querySelector('.b-item-id').value;
+                const qty = parseInt(r.querySelector('.b-item-qty').value) || 0;
+                const master = (window.state.masterBarang || []).find(b => b.id === barangId);
+
+                if (master) {
+                    const reqTotal = qty * stok;
+                    if (master.stok < reqTotal) {
+                        isStokValid = false;
+                        alert(`Stok master "${master.nama}" tidak cukup! Dibutuhkan ${reqTotal}, tersedia ${master.stok}.`);
+                    } else {
+                        items.push({ barangId, qty, nama: master.nama, hargaBeli: master.hargaBeli });
+                    }
+                }
+            });
+
+            if (!isStokValid) return;
+            if (items.length === 0) {
+                alert('Tambahkan minimal 1 item isian barang dalam bucket!');
+                return;
+            }
+
+            // Potong stok master barang sesuai racikan
+            items.forEach(it => {
+                const master = window.state.masterBarang.find(b => b.id === it.barangId);
+                if (master) master.stok -= (it.qty * stok);
+            });
+
+            const hppUnit = window.calcBucketHPP();
+
+            if (!window.state.buckets) window.state.buckets = [];
+            window.state.buckets.push({
+                id: 'bk_' + Date.now(),
+                nama,
+                stok,
+                hargaJual,
+                hppUnit,
+                items
+            });
+
+            window.saveToStorage();
+            document.getElementById('form-bucket').reset();
+            document.getElementById('bucket-items-container').innerHTML = '';
+            window.addBucketRow();
+            window.showToast('Paket Bucket Snack berhasil diracik dan disimpan!');
+        };
+
+        window.renderBucketCards = function() {
+            const container = document.getElementById('cards-bucket-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const list = window.state.buckets || [];
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-500 text-xs">Belum ada stok paket bucket snack.</div>`;
+                return;
+            }
+
+            list.forEach(bk => {
+                let itemsListHtml = '';
+                (bk.items || []).forEach(it => {
+                    itemsListHtml += `<li class="flex justify-between text-[11px] text-slate-400"><span>- ${it.nama}</span> <span class="font-bold text-slate-300">x${it.qty}</span></li>`;
+                });
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 relative overflow-hidden";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start border-b border-slate-800 pb-2">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-100">${bk.nama}</h3>
+                            <span class="text-[10px] text-pink-400 font-semibold">HPP Bahan: ${window.formatRp(bk.hppUnit)}</span>
+                        </div>
+                        <button onclick="window.deleteBucket('${bk.id}')" class="text-red-400 hover:text-red-300 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <ul class="space-y-1 bg-slate-900/60 p-2 rounded-lg">
+                        ${itemsListHtml}
+                    </ul>
+                    <div class="flex justify-between items-center pt-1 text-xs">
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">Harga Jual</span>
+                            <span class="font-bold text-emerald-400">${window.formatRp(bk.hargaJual)}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-500 block text-[10px]">Stok Bucket</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${bk.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">${bk.stok} Pcs</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        };
+
+        window.deleteBucket = function(id) {
+            if (confirm('Hapus paket bucket ini? (Catatan: Stok barang master bahan tidak dikembalikan secara otomatis).')) {
+                window.state.buckets = (window.state.buckets || []).filter(bk => bk.id !== id);
+                window.saveToStorage();
+                window.showToast('Paket bucket berhasil dihapus.');
+            }
+        };
+
+        window.deleteBarang = function(id) {
+            if (confirm('Hapus barang master ini?')) {
+                window.state.masterBarang = (window.state.masterBarang || []).filter(b => b.id !== id);
+                window.saveToStorage();
+                window.showToast('Barang master berhasil dihapus.');
+            }
+        };
+
         // AUTHENTICATION OBSERVER & INIT
         window.onload = function() {
             const savedAccount = localStorage.getItem('snackbucket_account_id');
@@ -683,11 +976,207 @@
                 }
             }
 
-            window.addBucketRow();
+            if (typeof window.addBucketRow === 'function') {
+                window.addBucketRow();
+            }
             window.renderAll();
         };
 
-        // ... existing functions (loginAsGuest, listenCloudStorage, loadFromLocalStorage, saveToStorage, handleAuthSubmit, handleSignOut, formatRp, showToast, switchTab) ...
+        // --- TRANSAKSI JUAL / BELI LOGIC ---
+        window.populateTransaksiDropdowns = function() {
+            // Dropdown Beli (Barang Master)
+            const selBeli = document.getElementById('tb-barang-id');
+            if (selBeli) {
+                selBeli.innerHTML = '<option value="">-- Pilih Barang --</option>';
+                (window.state.masterBarang || []).forEach(b => {
+                    selBeli.innerHTML += `<option value="${b.id}">${b.nama} (Stok: ${b.stok})</option>`;
+                });
+            }
+            window.updateJualDropdown();
+        };
+
+        window.autoFillBeli = function() {
+            const barangId = document.getElementById('tb-barang-id').value;
+            const item = (window.state.masterBarang || []).find(b => b.id === barangId);
+            if (item) {
+                document.getElementById('tb-harga').value = item.hargaBeli;
+                window.calcTotalBeli();
+            }
+        };
+
+        window.calcTotalBeli = function() {
+            const qty = parseInt(document.getElementById('tb-qty').value) || 0;
+            const harga = parseFloat(document.getElementById('tb-harga').value) || 0;
+            document.getElementById('tb-total-disp').innerText = window.formatRp(qty * harga);
+        };
+
+        window.processPembelian = function(e) {
+            e.preventDefault();
+            const barangId = document.getElementById('tb-barang-id').value;
+            const qty = parseInt(document.getElementById('tb-qty').value) || 0;
+            const harga = parseFloat(document.getElementById('tb-harga').value) || 0;
+            const total = qty * harga;
+
+            if (window.state.kas < total) {
+                alert('Saldo Kas tidak mencukupi untuk pembelian stok ini!');
+                return;
+            }
+
+            const item = window.state.masterBarang.find(b => b.id === barangId);
+            if (!item) return;
+
+            item.stok += qty;
+            item.hargaBeli = harga; // Update harga beli terbaru
+            window.state.kas -= total;
+
+            if (!window.state.transaksi) window.state.transaksi = [];
+            window.state.transaksi.unshift({
+                id: 'tr_' + Date.now(),
+                waktu: new Date().toLocaleString('id-ID'),
+                tipe: 'BELI',
+                itemNama: item.nama,
+                qty,
+                hargaUnit: harga,
+                total,
+                hppUnit: harga
+            });
+
+            window.saveToStorage();
+            document.getElementById('form-beli').reset();
+            window.calcTotalBeli();
+            window.showToast('Pembelian stok berhasil dicatat & Kas berkurang!');
+        };
+
+        window.updateJualDropdown = function() {
+            const tipe = document.getElementById('tj-tipe').value;
+            const selJual = document.getElementById('tj-produk-id');
+            if (!selJual) return;
+
+            selJual.innerHTML = '<option value="">-- Pilih Produk --</option>';
+
+            if (tipe === 'bucket') {
+                (window.state.buckets || []).forEach(bk => {
+                    selJual.innerHTML += `<option value="${bk.id}">${bk.nama} (Stok: ${bk.stok})</option>`;
+                });
+            } else {
+                (window.state.masterBarang || []).forEach(b => {
+                    selJual.innerHTML += `<option value="${b.id}">${b.nama} (Stok: ${b.stok})</option>`;
+                });
+            }
+            window.autoFillJual();
+        };
+
+        window.autoFillJual = function() {
+            const tipe = document.getElementById('tj-tipe').value;
+            const id = document.getElementById('tj-produk-id').value;
+
+            if (tipe === 'bucket') {
+                const bk = (window.state.buckets || []).find(b => b.id === id);
+                if (bk) {
+                    document.getElementById('tj-harga').value = bk.hargaJual;
+                }
+            } else {
+                const b = (window.state.masterBarang || []).find(x => x.id === id);
+                if (b) {
+                    document.getElementById('tj-harga').value = b.hargaBeli; // default modal
+                }
+            }
+            window.calcTotalJual();
+        };
+
+        window.calcTotalJual = function() {
+            const qty = parseInt(document.getElementById('tj-qty').value) || 0;
+            const harga = parseFloat(document.getElementById('tj-harga').value) || 0;
+            document.getElementById('tj-total-disp').innerText = window.formatRp(qty * harga);
+        };
+
+        window.processPenjualan = function(e) {
+            e.preventDefault();
+            const tipe = document.getElementById('tj-tipe').value;
+            const id = document.getElementById('tj-produk-id').value;
+            const qty = parseInt(document.getElementById('tj-qty').value) || 0;
+            const hargaJual = parseFloat(document.getElementById('tj-harga').value) || 0;
+            const total = qty * hargaJual;
+
+            let itemNama = '';
+            let hppUnit = 0;
+
+            if (tipe === 'bucket') {
+                const bk = window.state.buckets.find(b => b.id === id);
+                if (!bk) return;
+                if (bk.stok < qty) {
+                    alert(`Stok bucket "${bk.nama}" kurang! Tersedia: ${bk.stok}`);
+                    return;
+                }
+                bk.stok -= qty;
+                itemNama = bk.nama;
+                hppUnit = bk.hppUnit;
+            } else {
+                const b = window.state.masterBarang.find(x => x.id === id);
+                if (!b) return;
+                if (b.stok < qty) {
+                    alert(`Stok barang "${b.nama}" kurang! Tersedia: ${b.stok}`);
+                    return;
+                }
+                b.stok -= qty;
+                itemNama = b.nama;
+                hppUnit = b.hargaBeli;
+            }
+
+            window.state.kas += total;
+
+            if (!window.state.transaksi) window.state.transaksi = [];
+            window.state.transaksi.unshift({
+                id: 'tr_' + Date.now(),
+                waktu: new Date().toLocaleString('id-ID'),
+                tipe: 'JUAL',
+                itemNama,
+                qty,
+                hargaUnit: hargaJual,
+                total,
+                hppUnit
+            });
+
+            window.saveToStorage();
+            document.getElementById('form-jual').reset();
+            window.calcTotalJual();
+            window.showToast('Penjualan berhasil disimpan & Kas bertambah!');
+        };
+
+        window.renderRiwayat = function() {
+            const tbody = document.getElementById('tbl-riwayat');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const list = window.state.transaksi || [];
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">Belum ada transaksi jual/beli.</td></tr>`;
+                return;
+            }
+
+            list.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+                const isJual = t.tipe === 'JUAL';
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-slate-500">${t.waktu}</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isJual ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">${t.tipe}</span></td>
+                    <td class="py-3 px-3 font-semibold text-slate-200">${t.itemNama}</td>
+                    <td class="py-3 px-3 text-center font-bold text-slate-300">${t.qty}</td>
+                    <td class="py-3 px-3 text-slate-400">${window.formatRp(t.hargaUnit)}</td>
+                    <td class="py-3 px-3 text-right font-extrabold ${isJual ? 'text-emerald-400' : 'text-amber-400'}">${window.formatRp(t.total)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.clearAllTransactions = function() {
+            if (confirm('Apakah Anda yakin ingin mengosongkan seluruh riwayat transaksi?')) {
+                window.state.transaksi = [];
+                window.saveToStorage();
+                window.showToast('Riwayat transaksi telah dibersihkan.');
+            }
+        };
 
         window.renderAll = function() {
             // Update Header & Dashboard Stats
