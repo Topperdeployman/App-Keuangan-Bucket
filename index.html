@@ -366,9 +366,14 @@
             <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
                 <h2 class="text-md font-bold text-slate-100 mb-4 flex items-center justify-between">
                     <span><i class="fa-solid fa-clock-rotate-left text-pink-500 mr-2"></i> Riwayat Transaksi Jual / Beli</span>
-                    <button onclick="clearAllTransactions()" class="text-xs text-red-400 hover:text-red-300 font-semibold">
-                        <i class="fa-solid fa-trash mr-1"></i> Reset Transaksi
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button onclick="clearAllTransactions()" class="text-xs text-red-400 hover:text-red-300 font-semibold bg-red-950/40 border border-red-900/60 px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Reset Transaksi & Hitung Kas
+                        </button>
+                        <button onclick="resetFullData()" class="text-xs text-amber-400 hover:text-amber-300 font-semibold bg-amber-950/40 border border-amber-900/60 px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-trash-arrow-up mr-1"></i> Reset Ulang Ke Modal Awal
+                        </button>
+                    </div>
                 </h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-300">
@@ -1128,10 +1133,28 @@
         };
 
         window.clearAllTransactions = function() {
-            if (confirm('Apakah Anda yakin ingin mengosongkan seluruh riwayat transaksi?')) {
+            if (confirm('Apakah Anda yakin ingin mengosongkan seluruh riwayat transaksi? Kas akan dikembalikan sesuai perhitungan sisa transaksi/gaji.')) {
                 window.state.transaksi = [];
+                
+                // Hitung ulang saldo kas berdasarkan modal awal dikurangi total pengeluaran gaji yang ada
+                let totalGaji = 0;
+                (window.state.gaji || []).forEach(g => { totalGaji += g.nominal; });
+                
+                window.state.kas = (window.state.modalAwal || 0) - totalGaji;
+                
                 window.saveToStorage();
-                window.showToast('Riwayat transaksi telah dibersihkan.');
+                window.showToast('Riwayat transaksi dibersihkan & Saldo Kas dikembalikan ke Modal Awal!');
+            }
+        };
+
+        window.resetFullData = function() {
+            if (confirm('Reset total pembukuan? Seluruh transaksi, stok bucket, dan gaji akan dikosongkan, serta Kas akan kembali persis sama dengan Modal Awal.')) {
+                window.state.transaksi = [];
+                window.state.gaji = [];
+                window.state.kas = window.state.modalAwal || 0;
+                
+                window.saveToStorage();
+                window.showToast('Seluruh pembukuan berhasil di-reset ke Modal Awal!');
             }
         };
 
