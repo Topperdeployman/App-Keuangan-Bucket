@@ -550,7 +550,7 @@
             </h3>
             <div>
                 <label class="block text-xs text-slate-400 mb-1">Nominal Modal Awal (Rp)</label>
-                <input type="number" id="input-modal-awal" min="0" class="w-full p-2.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-xl text-sm focus:outline-none focus:border-pink-500">
+                <input type="number" step="any" id="input-modal-awal" min="0" class="w-full p-2.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-xl text-sm focus:outline-none focus:border-pink-500">
             </div>
             <div class="flex justify-end space-x-2 pt-2">
                 <button onclick="closeModalAwal()" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">Batal</button>
@@ -900,29 +900,35 @@
                 let itemsListHtml = '';
                 (bk.items || []).forEach(it => {
                     itemsListHtml += `<li class="flex justify-between text-[11px] text-slate-400"><span>- ${it.nama}</span> <span class="font-bold text-slate-300">x${it.qty}</span></li>`;
-                });
-
-                const card = document.createElement('div');
-                card.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 relative overflow-hidden";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start border-b border-slate-800 pb-2">
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-100">${bk.nama}</h3>
-                            <span class="text-[10px] text-pink-400 font-semibold">HPP Bahan: ${window.formatRp(bk.hppUnit)}</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli / Modal (Rp)</label>
+                                <input type="number" step="any" id="m-harga-beli" min="0" required placeholder="2000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Awal</label>
+                                <input type="number" id="m-stok" min="0" value="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500">
+                            </div>
                         </div>
-                        <button onclick="window.deleteBucket('${bk.id}')" class="text-red-400 hover:text-red-300 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                    <ul class="space-y-1 bg-slate-900/60 p-2 rounded-lg">
-                        ${itemsListHtml}
-                    </ul>
-                    <div class="flex justify-between items-center pt-1 text-xs">
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">Harga Jual</span>
-                            <span class="font-bold text-emerald-400">${window.formatRp(bk.hargaJual)}</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Stok Bucket Dibuat</label>
+                                <input type="number" id="b-stok" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual Bucket (Rp)</label>
+                                <input type="number" step="any" id="b-harga-jual" min="0" required placeholder="50000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-slate-500 block text-[10px]">Stok Bucket</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${bk.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">${bk.stok} Pcs</span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Beli (QTY)</label>
+                                <input type="number" id="tb-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Beli per Unit (Rp)</label>
+                                <input type="number" step="any" id="tb-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500" oninput="calcTotalBeli()">
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1418,43 +1424,29 @@
                                         <td class="py-2 text-right">${window.formatRp(window.state.kas)}</td>
                                     </tr>
                                     <tr class="border-b border-slate-100">
-                                        <td class="py-2 font-medium">Persediaan Stok Barang & Bucket</td>
-                                        <td class="py-2 text-right">${window.formatRp(totalInventaris)}</td>
-                                    </tr>
-                                    <tr class="font-bold bg-slate-100 border-t border-slate-400">
-                                        <td class="py-2.5 px-1">JUMLAH ASET</td>
-                                        <td class="py-2.5 px-1 text-right">${window.formatRp(totalAset)}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Jumlah Jual (QTY)</label>
+                                <input type="number" id="tj-qty" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Harga Jual per Unit (Rp)</label>
+                                <input type="number" step="any" id="tj-harga" min="0" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-emerald-500" oninput="calcTotalJual()">
+                            </div>
                         </div>
 
                         <div>
-                            <h3 class="font-bold text-md border-b-2 border-slate-800 pb-1 mb-3 text-slate-800">EKUITAS & KEWAJIBAN</h3>
-                            <table class="w-full text-xs">
-                                <tbody>
-                                    <tr class="border-b border-slate-100">
-                                        <td class="py-2 font-medium">Modal Awal Disetor</td>
-                                        <td class="py-2 text-right">${window.formatRp(window.state.modalAwal)}</td>
-                                    </tr>
-                                    <tr class="border-b border-slate-100">
-                                        <td class="py-2 font-medium">Laba Ditahan / Berjalan</td>
-                                        <td class="py-2 text-right">${window.formatRp(labaBersih)}</td>
-                                    </tr>
-                                    <tr class="font-bold bg-slate-100 border-t border-slate-400">
-                                        <td class="py-2.5 px-1">JUMLAH EKUITAS</td>
-                                        <td class="py-2.5 px-1 text-right">${window.formatRp(totalPasiva)}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal Gaji / Upah (Rp)</label>
+                            <input type="number" step="any" id="g-nominal" min="0.01" required placeholder="500000" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-rose-500">
                         </div>
-                    </div>
-                `;
-            }
-
-            document.getElementById('print-area').classList.remove('hidden');
-            window.print();
-            document.getElementById('print-area').classList.add('hidden');
+        // EXPLICIT GLOBAL FUNCTION ATTACHMENTS (Mencegah ReferenceError)
+        window.formatRp = function(val) {
+            return new Intl.NumberFormat('id-ID', { 
+                style: 'currency', 
+                currency: 'IDR', 
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2 
+            }).format(val || 0);
         };
 
         // DOM CONTENT LOADED INITIALIZATION
