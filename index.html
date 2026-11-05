@@ -449,7 +449,44 @@
                             <span class="text-slate-400">Modal Awal Disetor</span>
                             <span id="prv-neraca-modal" class="font-medium text-slate-200">Rp 0</span>
                         </div>
-    <!-- MODAL AUTH / LOGIN & REGISTER (OVERLAY FULLSCREEN UNTUK LOGIN TANPA PASSWORD) -->
+                        <div class="flex justify-between pl-3 text-xs">
+                            <span class="text-slate-400">Laba Ditahan / Berjalan</span>
+                            <span id="prv-neraca-laba" class="font-medium text-slate-200">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between py-2 px-3 bg-indigo-950/40 border border-indigo-900/60 font-bold text-indigo-300 rounded-xl">
+                            <span>TOTAL EKUITAS</span>
+                            <span id="prv-neraca-total-pasiva" class="text-indigo-400">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AREA CETAK PRINT / SAVE PDF -->
+    <div id="print-area" class="print-area hidden">
+        <div id="print-content"></div>
+    </div>
+
+    <!-- MODAL EDIT MODAL AWAL -->
+    <div id="modal-awal-dialog" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl space-y-4">
+            <h3 class="text-md font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-pink-500"></i> Edit Modal Awal Disetor
+            </h3>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Nominal Modal Awal (Rp)</label>
+                <input type="number" id="input-modal-awal" min="0" class="w-full p-2.5 bg-slate-950 border border-slate-800 text-slate-100 rounded-xl text-sm focus:outline-none focus:border-pink-500">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModalAwal()" class="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-700">Batal</button>
+                <button onclick="saveModalAwal()" class="px-4 py-2 bg-pink-600 text-white text-xs font-bold rounded-xl hover:bg-pink-500 shadow-lg shadow-pink-600/30">Simpan Modal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AUTH / HUBUNGKAN AKUN TOKO (LOGIN TANPA PASSWORD) -->
     <div id="auth-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center z-[100]">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl space-y-6">
             <div class="text-center space-y-2">
@@ -483,47 +520,6 @@
                 <button type="button" onclick="loginAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-xs border border-slate-700 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-user-clock"></i> Masuk Mode Tamu (Sesi Lokal)
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL AUTH / LOGIN & REGISTER (OVERLAY FULLSCREEN UNTUK LOGIN) -->
-    <div id="auth-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center z-[100]">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl space-y-6">
-            <div class="text-center space-y-2">
-                <div class="inline-flex p-3 bg-pink-600/20 text-pink-500 rounded-2xl border border-pink-500/30 mb-2">
-                    <i class="fa-solid fa-user-shield text-3xl"></i>
-                </div>
-                <h2 id="auth-title" class="text-2xl font-black text-white tracking-tight">Akun Toko & History Cloud</h2>
-                <p id="auth-subtitle" class="text-xs text-slate-400">Masuk dengan email akun Anda untuk memulihkan seluruh riwayat transaksi & stok barang di perangkat ini.</p>
-            </div>
-
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Email Toko / Akun</label>
-                    <input type="email" id="auth-email" placeholder="toko@bucket.com" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-300 mb-1">Kata Sandi (Password) <span class="text-[10px] text-slate-400 font-normal">(Min. 6 Karakter)</span></label>
-                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
-                </div>
-
-                <div id="auth-error" class="hidden text-xs text-red-400 bg-red-950/50 p-3 rounded-xl border border-red-800/80 text-center font-medium"></div>
-
-                <button type="submit" id="auth-btn-submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-pink-600/30 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-arrows-rotate"></i> <span>Masuk & Pulihkan History</span>
-                </button>
-            </form>
-
-            <div class="space-y-3 pt-2 text-center">
-                <button type="button" onclick="loginAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-xs border border-slate-700 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-user-slash"></i> Gunakan Tanpa Akun (Sesi Lokal sementara)
-                </button>
-                <div class="border-t border-slate-800 pt-3">
-                    <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-pink-400 hover:text-pink-300 font-semibold">
-                        Belum punya akun? Buat Akun Baru
-                    </button>
-                </div>
             </div>
         </div>
     </div>
