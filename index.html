@@ -449,40 +449,40 @@
                             <span class="text-slate-400">Modal Awal Disetor</span>
                             <span id="prv-neraca-modal" class="font-medium text-slate-200">Rp 0</span>
                         </div>
-                        <div class="flex justify-between pl-3 text-xs">
-                            <span class="text-slate-400">Laba Ditahan / Berjalan</span>
-                            <span id="prv-neraca-laba" class="font-medium text-slate-200">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between py-2 px-3 bg-indigo-950/40 border border-indigo-900/60 font-bold text-indigo-300 rounded-xl">
-                            <span>TOTAL EKUITAS & KEWAJIBAN</span>
-                            <span id="prv-neraca-total-pasiva" class="text-indigo-400">Rp 0</span>
-                        </div>
-                    </div>
+    <!-- MODAL AUTH / LOGIN & REGISTER (OVERLAY FULLSCREEN UNTUK LOGIN TANPA PASSWORD) -->
+    <div id="auth-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center z-[100]">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-3 bg-pink-600/20 text-pink-500 rounded-2xl border border-pink-500/30 mb-2">
+                    <i class="fa-solid fa-user-check text-3xl"></i>
                 </div>
+                <h2 id="auth-title" class="text-2xl font-black text-white tracking-tight">Hubungkan Akun Toko</h2>
+                <p id="auth-subtitle" class="text-xs text-slate-400">Masukkan ID / Email Akun Toko Anda. Tanpa kata sandi, history transaksi & stok otomatis pulih!</p>
             </div>
-        </section>
 
-    </main>
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">ID / Email Akun Toko</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                            <i class="fa-solid fa-store"></i>
+                        </span>
+                        <input type="text" id="auth-email" required placeholder="Contoh: tokobucket01" class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-pink-500">
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1.5">*Gunakan ID Akun yang sama di browser/HP lain untuk menyinkronkan riwayat.</p>
+                </div>
 
-    <!-- PRINT SECTION CONTAINER (ONLY VISIBLE WHEN PRINTING) -->
-    <div id="print-area" class="print-area hidden">
-        <div id="print-content"></div>
-    </div>
+                <div id="auth-error" class="hidden text-xs text-red-400 bg-red-950/50 p-3 rounded-xl border border-red-800/80 text-center font-medium"></div>
 
-    <!-- MODAL EDIT MODAL AWAL -->
-    <div id="modal-awal-dialog" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center hidden z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
-            <h3 class="text-md font-bold text-slate-100 flex items-center gap-2">
-                <i class="fa-solid fa-wallet text-pink-500"></i> Set Modal Awal Usaha
-            </h3>
-            <p class="text-xs text-slate-400">Masukkan dana awal kas yang Anda alokasikan untuk usaha bucket snack ini.</p>
-            <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Nominal Modal Awal (Rp)</label>
-                <input type="number" id="input-modal-awal" min="0" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-pink-500">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModalAwal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 rounded-xl">Batal</button>
-                <button onclick="saveModalAwal()" class="px-4 py-2 text-xs font-bold bg-pink-600 text-white rounded-xl hover:bg-pink-500 shadow-lg shadow-pink-600/30">Simpan Modal</button>
+                <button type="submit" id="auth-btn-submit" class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition text-sm shadow-lg shadow-pink-600/30 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down text-base"></i> <span>Masuk & Pulihkan History</span>
+                </button>
+            </form>
+
+            <div class="space-y-3 pt-2 text-center">
+                <button type="button" onclick="loginAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-xs border border-slate-700 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-clock"></i> Masuk Mode Tamu (Sesi Lokal)
+                </button>
             </div>
         </div>
     </div>
@@ -542,8 +542,6 @@
             signInWithCustomToken, 
             signInAnonymously, 
             onAuthStateChanged,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
             signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
@@ -574,7 +572,7 @@
         }
 
         let currentUser = null;
-        let isAuthModeLogin = true;
+        let activeAccountId = null;
         let unsubscribeDoc = null;
 
         // GLOBAL STATE
@@ -605,6 +603,9 @@
 
         // AUTHENTICATION OBSERVER & INIT
         window.onload = function() {
+            // Auto login dari LocalStorage jika pernah terhubung
+            const savedAccount = localStorage.getItem('snackbucket_account_id');
+
             if (auth) {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
@@ -613,46 +614,49 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         currentUser = user;
-                        document.getElementById('auth-modal').classList.add('hidden');
-                        document.getElementById('user-email-display').innerText = user.email || (user.isAnonymous ? 'Tamu (Cloud)' : user.uid.substring(0,8));
-                        listenCloudStorage(user.uid);
+                        if (savedAccount) {
+                            activeAccountId = savedAccount;
+                            document.getElementById('auth-modal').classList.add('hidden');
+                            document.getElementById('user-email-display').innerText = activeAccountId;
+                            listenCloudStorage(activeAccountId);
+                        } else {
+                            document.getElementById('auth-modal').classList.remove('hidden');
+                        }
                     } else {
-                        currentUser = null;
-                        document.getElementById('auth-modal').classList.remove('hidden');
-                        if (unsubscribeDoc) unsubscribeDoc();
+                        signInAnonymously(auth).catch(() => {
+                            if (!savedAccount) document.getElementById('auth-modal').classList.remove('hidden');
+                        });
                     }
                 });
             } else {
-                // Standalone mode tanpa Firebase SDK khusus
-                document.getElementById('user-email-display').innerText = 'Mode Lokal';
-                document.getElementById('user-status-badge').innerText = 'Penyimpanan Sesi';
+                if (savedAccount) {
+                    activeAccountId = savedAccount;
+                    document.getElementById('auth-modal').classList.add('hidden');
+                    document.getElementById('user-email-display').innerText = activeAccountId;
+                    loadFromLocalStorage(activeAccountId);
+                }
             }
 
             window.addBucketRow();
             window.renderAll();
         };
 
-        // GUEST / ANONYMOUS LOGIN
+        // GUEST LOGIN
         window.loginAsGuest = function() {
-            if (auth) {
-                signInAnonymously(auth).then(() => {
-                    window.showToast('Masuk sebagai Tamu!');
-                }).catch((err) => {
-                    // Fallback jika anonymous auth disabled
-                    document.getElementById('auth-modal').classList.add('hidden');
-                    window.showToast('Masuk Mode Lokal.');
-                });
-            } else {
-                document.getElementById('auth-modal').classList.add('hidden');
-                window.showToast('Masuk Mode Lokal.');
-            }
+            activeAccountId = 'tamu_' + Math.random().toString(36).substring(2, 7);
+            localStorage.setItem('snackbucket_account_id', activeAccountId);
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('user-email-display').innerText = activeAccountId;
+            if (db) listenCloudStorage(activeAccountId);
+            window.showToast('Masuk Mode Tamu!');
         };
 
-        // CLOUD STORAGE SYNC (Firestore)
-        function listenCloudStorage(userId) {
+        // CLOUD STORAGE SYNC (Firestore berdasarkan Account ID tanpa password)
+        function listenCloudStorage(accountId) {
             if (!db) return;
-            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'store_data', 'main_record');
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'account_' + accountId.replace(/[^a-zA-Z0-9]/g, '_'));
             
+            if (unsubscribeDoc) unsubscribeDoc();
             unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     window.state = docSnap.data();
@@ -665,145 +669,58 @@
             });
         }
 
+        function loadFromLocalStorage(accountId) {
+            const raw = localStorage.getItem('snackbucket_data_' + accountId);
+            if (raw) {
+                try { window.state = JSON.parse(raw); } catch(e) {}
+            }
+        }
+
         window.saveToStorage = async function() {
-            if (!currentUser || !db) {
-                window.renderAll();
-                return;
+            if (!activeAccountId) return;
+            
+            // Simpan lokal sebagai backup
+            localStorage.setItem('snackbucket_data_' + activeAccountId, JSON.stringify(window.state));
+
+            if (db) {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'account_' + activeAccountId.replace(/[^a-zA-Z0-9]/g, '_'));
+                try {
+                    await setDoc(docRef, window.state);
+                } catch (err) {
+                    console.error("Error Saving to Cloud:", err);
+                }
             }
-            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'store_data', 'main_record');
-            try {
-                await setDoc(docRef, window.state);
-                window.renderAll();
-            } catch (err) {
-                console.error("Error Saving to Cloud:", err);
-            }
+            window.renderAll();
         };
 
-        // AUTH FORM HANDLERS
-        window.toggleAuthMode = function() {
-            isAuthModeLogin = !isAuthModeLogin;
-            const title = document.getElementById('auth-title');
-            const subtitle = document.getElementById('auth-subtitle');
-            const btnSpan = document.querySelector('#auth-btn-submit span');
-            const toggleBtn = document.getElementById('auth-toggle-btn');
-            document.getElementById('auth-error').classList.add('hidden');
-
-            if (isAuthModeLogin) {
-                title.innerText = 'Masuk ke Akun Toko';
-                subtitle.innerText = 'Sinkronkan data transaksi dan stok Anda di semua perangkat secara real-time.';
-                btnSpan.innerText = 'Masuk & Sinkronkan';
-                toggleBtn.innerText = 'Belum punya akun? Buat Akun Baru';
-            } else {
-                title.innerText = 'Buat Akun Baru';
-                subtitle.innerText = 'Daftarkan email toko Anda agar riwayat keuangan dapat diakses di mana saja.';
-                btnSpan.innerText = 'Daftar Akun Baru';
-                toggleBtn.innerText = 'Sudah punya akun? Login di sini';
-            }
-        };
-
-        window.handleAuthSubmit = async function(e) {
+        // SUBMIT LOGIN AKUN (TANPA PASSWORD)
+        window.handleAuthSubmit = function(e) {
             e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
+            const accountInput = document.getElementById('auth-email').value.trim();
+            if (!accountInput) return;
 
-            if (!auth) {
-                window.loginAsGuest();
-                return;
+            activeAccountId = accountInput.toLowerCase();
+            localStorage.setItem('snackbucket_account_id', activeAccountId);
+
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('user-email-display').innerText = activeAccountId;
+
+            if (db) {
+                listenCloudStorage(activeAccountId);
+            } else {
+                loadFromLocalStorage(activeAccountId);
             }
 
-            try {
-                if (isAuthModeLogin) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                }
-                window.showToast(isAuthModeLogin ? 'Berhasil Login!' : 'Akun berhasil dibuat!');
-            } catch (error) {
-                let msg = error.message.replace('Firebase: ', '');
-                if (msg.includes('api-key-not-valid')) {
-                    msg = "Sistem beralih ke Mode Tamu otomatis...";
-                    setTimeout(() => window.loginAsGuest(), 1000);
-                }
-                errDiv.innerText = msg;
-                errDiv.classList.remove('hidden');
-            }
+            window.showToast(`Berhasil tersambung ke Akun: ${activeAccountId}`);
         };
 
         window.handleSignOut = function() {
-            if (confirm('Keluar dari akun / aplikasi?')) {
-                if (auth && currentUser) {
-                    signOut(auth).then(() => {
-                        window.showToast('Berhasil keluar akun.');
-                    });
-                } else {
-                    document.getElementById('auth-modal').classList.remove('hidden');
-                }
-            }
-        };
-
-        // AUTH FORM HANDLERS
-        window.toggleAuthMode = function() {
-            isAuthModeLogin = !isAuthModeLogin;
-            const title = document.getElementById('auth-title');
-            const subtitle = document.getElementById('auth-subtitle');
-            const btnSpan = document.querySelector('#auth-btn-submit span');
-            const toggleBtn = document.getElementById('auth-toggle-btn');
-            document.getElementById('auth-error').classList.add('hidden');
-
-            if (isAuthModeLogin) {
-                title.innerText = 'Akun Toko & History Cloud';
-                subtitle.innerText = 'Masuk dengan email akun Anda untuk memulihkan seluruh riwayat transaksi & stok barang di perangkat ini.';
-                btnSpan.innerText = 'Masuk & Pulihkan History';
-                toggleBtn.innerText = 'Belum punya akun? Buat Akun Baru';
-            } else {
-                title.innerText = 'Daftar Akun Baru';
-                subtitle.innerText = 'Buat akun toko baru agar data history keuangan tersimpan aman di Cloud.';
-                btnSpan.innerText = 'Daftarkan Akun';
-                toggleBtn.innerText = 'Sudah punya akun? Pulihkan History di sini';
-            }
-        };
-
-        window.handleAuthSubmit = async function(e) {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            const errDiv = document.getElementById('auth-error');
-            errDiv.classList.add('hidden');
-
-            if (!auth) {
-                window.loginAsGuest();
-                return;
-            }
-
-            try {
-                if (isAuthModeLogin) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                }
-                window.showToast(isAuthModeLogin ? 'Akun berhasil tersambung! History dipulihkan.' : 'Akun berhasil dibuat!');
-            } catch (error) {
-                let msg = error.message.replace('Firebase: ', '');
-                if (msg.includes('api-key-not-valid')) {
-                    msg = "Menggunakan mode offline / lokal...";
-                    setTimeout(() => window.loginAsGuest(), 1000);
-                }
-                errDiv.innerText = msg;
-                errDiv.classList.remove('hidden');
-            }
-        };
-
-        window.handleSignOut = function() {
-            if (confirm('Keluar dari akun ini? Data di perangkat ini akan kembali ke tampilan default.')) {
-                if (auth && currentUser) {
-                    signOut(auth).then(() => {
-                        window.showToast('Telah keluar dari akun.');
-                    });
-                } else {
-                    document.getElementById('auth-modal').classList.remove('hidden');
-                }
+            if (confirm('Ganti / keluar dari akun ini? Anda bisa masuk lagi kapan saja untuk memulihkan history.')) {
+                localStorage.removeItem('snackbucket_account_id');
+                activeAccountId = null;
+                document.getElementById('auth-modal').classList.remove('hidden');
+                document.getElementById('auth-email').value = '';
+                if (unsubscribeDoc) unsubscribeDoc();
             }
         };
 
