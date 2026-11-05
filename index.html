@@ -600,7 +600,6 @@
 
     <!-- FIREBASE MODULE & APP LOGIC -->
     <script type="module">
-        // ... existing imports & firebase config setup ...
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
@@ -615,8 +614,9 @@
             onSnapshot 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // APP INITIALIZATION & FIREBASE BINDING
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'bucket-snack-app';
-        let firebaseConfig;
+        let firebaseConfig = null;
         try {
             firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         } catch(e) {
@@ -638,7 +638,7 @@
         let activeAccountId = null;
         let unsubscribeDoc = null;
 
-        // GLOBAL STATE INITIALIZATION (KOSONG DENGAN DUMMY DIBERSIHKAN TOTAL)
+        // GLOBAL STATE INITIALIZATION
         window.state = {
             modalAwal: 0,
             kas: 0,
@@ -648,13 +648,14 @@
             gaji: []
         };
 
-        // HELPER UTILITY FUNCTIONS
+        // EXPLICIT GLOBAL FUNCTION ATTACHMENTS (Mencegah ReferenceError)
         window.formatRp = function(val) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val || 0);
         };
 
         window.showToast = function(msg) {
             const toast = document.getElementById('toast');
+            if(!toast) return;
             document.getElementById('toast-msg').innerText = msg;
             toast.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
@@ -669,7 +670,9 @@
                 el.classList.add('bg-slate-900', 'text-slate-400');
             });
 
-            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            const targetSec = document.getElementById(`sec-${tabName}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+
             const activeBtn = document.getElementById(`tab-${tabName}`);
             if (activeBtn) {
                 activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
@@ -677,7 +680,6 @@
             }
         };
 
-        // MODAL AWAL & STORAGE HANDLERS
         window.openModalAwal = function() {
             document.getElementById('input-modal-awal').value = window.state.modalAwal || 0;
             document.getElementById('modal-awal-dialog').classList.remove('hidden');
@@ -691,7 +693,7 @@
             const val = parseFloat(document.getElementById('input-modal-awal').value) || 0;
             const diff = val - (window.state.modalAwal || 0);
             window.state.modalAwal = val;
-            window.state.kas += diff; // Menyesuaikan Kas sesuai selisih perubahan modal
+            window.state.kas += diff;
             window.saveToStorage();
             window.closeModalAwal();
             window.showToast('Modal awal berhasil diperbarui!');
@@ -769,7 +771,6 @@
             document.getElementById('auth-modal').classList.remove('hidden');
         };
 
-        // RACIK BUCKET DYNAMIC ROWS & CALCULATIONS
         window.addBucketRow = function() {
             const container = document.getElementById('bucket-items-container');
             if (!container) return;
@@ -855,7 +856,6 @@
                 return;
             }
 
-            // Potong stok master barang sesuai racikan
             items.forEach(it => {
                 const master = window.state.masterBarang.find(b => b.id === it.barangId);
                 if (master) master.stok -= (it.qty * stok);
@@ -926,7 +926,7 @@
         };
 
         window.deleteBucket = function(id) {
-            if (confirm('Hapus paket bucket ini? (Catatan: Stok barang master bahan tidak dikembalikan secara otomatis).')) {
+            if (confirm('Hapus paket bucket ini?')) {
                 window.state.buckets = (window.state.buckets || []).filter(bk => bk.id !== id);
                 window.saveToStorage();
                 window.showToast('Paket bucket berhasil dihapus.');
@@ -941,50 +941,7 @@
             }
         };
 
-        // AUTHENTICATION OBSERVER & INIT
-        window.onload = function() {
-            const savedAccount = localStorage.getItem('snackbucket_account_id');
-
-            if (auth) {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        if (savedAccount) {
-                            activeAccountId = savedAccount;
-                            document.getElementById('auth-modal').classList.add('hidden');
-                            document.getElementById('user-email-display').innerText = activeAccountId;
-                            listenCloudStorage(activeAccountId);
-                        } else {
-                            document.getElementById('auth-modal').classList.remove('hidden');
-                        }
-                    } else {
-                        signInAnonymously(auth).catch(() => {
-                            if (!savedAccount) document.getElementById('auth-modal').classList.remove('hidden');
-                        });
-                    }
-                });
-            } else {
-                if (savedAccount) {
-                    activeAccountId = savedAccount;
-                    document.getElementById('auth-modal').classList.add('hidden');
-                    document.getElementById('user-email-display').innerText = activeAccountId;
-                    loadFromLocalStorage(activeAccountId);
-                }
-            }
-
-            if (typeof window.addBucketRow === 'function') {
-                window.addBucketRow();
-            }
-            window.renderAll();
-        };
-
-        // --- TRANSAKSI JUAL / BELI LOGIC ---
         window.populateTransaksiDropdowns = function() {
-            // Dropdown Beli (Barang Master)
             const selBeli = document.getElementById('tb-barang-id');
             if (selBeli) {
                 selBeli.innerHTML = '<option value="">-- Pilih Barang --</option>';
@@ -1026,7 +983,7 @@
             if (!item) return;
 
             item.stok += qty;
-            item.hargaBeli = harga; // Update harga beli terbaru
+            item.hargaBeli = harga;
             window.state.kas -= total;
 
             if (!window.state.transaksi) window.state.transaksi = [];
@@ -1078,7 +1035,7 @@
             } else {
                 const b = (window.state.masterBarang || []).find(x => x.id === id);
                 if (b) {
-                    document.getElementById('tj-harga').value = b.hargaBeli; // default modal
+                    document.getElementById('tj-harga').value = b.hargaBeli;
                 }
             }
             window.calcTotalJual();
@@ -1178,47 +1135,33 @@
             }
         };
 
-        window.renderAll = function() {
-            // Update Header & Dashboard Stats
-            document.getElementById('nav-kas').innerText = window.formatRp(window.state.kas);
-            document.getElementById('dash-modal').innerText = window.formatRp(window.state.modalAwal);
-            document.getElementById('dash-kas').innerText = window.formatRp(window.state.kas);
+        window.renderMasterBarang = function() {
+            const tbody = document.getElementById('tbl-master-barang');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            const list = window.state.masterBarang || [];
+            document.getElementById('count-barang').innerText = `${list.length} Item`;
 
-            // Calculate Inventory Value & Financials
-            let totalInventaris = 0;
-            (window.state.masterBarang || []).forEach(b => { totalInventaris += (b.stok * b.hargaBeli); });
-            (window.state.buckets || []).forEach(bk => { totalInventaris += (bk.stok * bk.hppUnit); });
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">Belum ada data barang master.</td></tr>`;
+                return;
+            }
 
-            let totalPendapatan = 0;
-            let totalHPP = 0;
-            (window.state.transaksi || []).filter(t => t.tipe === 'JUAL').forEach(t => {
-                totalPendapatan += t.total;
-                totalHPP += (t.hppUnit * t.qty);
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-semibold text-slate-200">${item.nama}</td>
+                    <td class="py-3 px-3 text-slate-400">${window.formatRp(item.hargaBeli)}</td>
+                    <td class="py-3 px-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${item.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">${item.stok}</span></td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="window.deleteBarang('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
-
-            let totalBebanGaji = 0;
-            (window.state.gaji || []).forEach(g => {
-                totalBebanGaji += g.nominal;
-            });
-
-            const labaKotor = totalPendapatan - totalHPP;
-            const labaBersih = labaKotor - totalBebanGaji;
-
-            document.getElementById('dash-inventaris').innerText = window.formatRp(totalInventaris);
-            document.getElementById('dash-gaji').innerText = window.formatRp(totalBebanGaji);
-            document.getElementById('dash-laba').innerText = window.formatRp(labaBersih);
-            document.getElementById('dash-laba').className = `text-xl font-extrabold ${labaBersih >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
-
-            // Render Modules
-            window.renderMasterBarang();
-            window.renderBucketCards();
-            window.renderRiwayat();
-            window.renderRiwayatGaji();
-            window.renderLaporanPreviews(totalPendapatan, totalHPP, labaKotor, totalBebanGaji, labaBersih, totalInventaris);
-            window.populateTransaksiDropdowns();
         };
 
-        // --- MASTER BARANG FUNCTIONS (REVISI TANPA HARGA JUAL) ---
         window.saveBarangDefault = function(e) {
             e.preventDefault();
             const nama = document.getElementById('m-nama').value.trim();
@@ -1238,33 +1181,6 @@
             window.showToast('Barang master berhasil ditambahkan!');
         };
 
-        window.renderMasterBarang = function() {
-            const tbody = document.getElementById('tbl-master-barang');
-            tbody.innerHTML = '';
-            const list = window.state.masterBarang || [];
-            document.getElementById('count-barang').innerText = `${list.length} Item`;
-
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-500">Belum ada data barang master.</td></tr>`;
-                return;
-            }
-
-            list.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
-                tr.innerHTML = `
-                    <td class="py-3 px-3 font-semibold text-slate-200">${item.nama}</td>
-                    <td class="py-3 px-3 text-slate-400">${window.formatRp(item.hargaBeli)}</td>
-                    <td class="py-3 px-3 text-center"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${item.stok > 0 ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">${item.stok}</span></td>
-                    <td class="py-3 px-3 text-right">
-                        <button onclick="deleteBarang('${item.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
-        // --- GAJI KARYAWAN FUNCTIONS ---
         window.processBayarGaji = function(e) {
             e.preventDefault();
             const nama = document.getElementById('g-nama').value.trim();
@@ -1294,6 +1210,7 @@
 
         window.renderRiwayatGaji = function() {
             const tbody = document.getElementById('tbl-riwayat-gaji');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const list = window.state.gaji || [];
             
@@ -1315,7 +1232,7 @@
                     <td class="py-3 px-3 text-slate-400">${g.ket}</td>
                     <td class="py-3 px-3 text-right font-bold text-rose-400">${window.formatRp(g.nominal)}</td>
                     <td class="py-3 px-3 text-right">
-                        <button onclick="deleteGaji('${g.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="window.deleteGaji('${g.id}')" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1334,7 +1251,6 @@
             }
         };
 
-        // --- LAPORAN & PRINT REVISI (TERMASUK BEBAN GAJI) ---
         window.renderLaporanPreviews = function(pendapatan, hpp, labaKotor, bebanGaji, labaBersih, inventaris) {
             document.getElementById('prv-pendapatan').innerText = window.formatRp(pendapatan);
             document.getElementById('prv-hpp').innerText = `(${window.formatRp(hpp)})`;
@@ -1351,6 +1267,41 @@
             document.getElementById('prv-neraca-laba').innerText = window.formatRp(labaBersih);
             const totalPasiva = window.state.modalAwal + labaBersih;
             document.getElementById('prv-neraca-total-pasiva').innerText = window.formatRp(totalPasiva);
+        };
+
+        window.renderAll = function() {
+            document.getElementById('nav-kas').innerText = window.formatRp(window.state.kas);
+            document.getElementById('dash-modal').innerText = window.formatRp(window.state.modalAwal);
+            document.getElementById('dash-kas').innerText = window.formatRp(window.state.kas);
+
+            let totalInventaris = 0;
+            (window.state.masterBarang || []).forEach(b => { totalInventaris += (b.stok * b.hargaBeli); });
+            (window.state.buckets || []).forEach(bk => { totalInventaris += (bk.stok * bk.hppUnit); });
+
+            let totalPendapatan = 0;
+            let totalHPP = 0;
+            (window.state.transaksi || []).filter(t => t.tipe === 'JUAL').forEach(t => {
+                totalPendapatan += t.total;
+                totalHPP += (t.hppUnit * t.qty);
+            });
+
+            let totalBebanGaji = 0;
+            (window.state.gaji || []).forEach(g => { totalBebanGaji += g.nominal; });
+
+            const labaKotor = totalPendapatan - totalHPP;
+            const labaBersih = labaKotor - totalBebanGaji;
+
+            document.getElementById('dash-inventaris').innerText = window.formatRp(totalInventaris);
+            document.getElementById('dash-gaji').innerText = window.formatRp(totalBebanGaji);
+            document.getElementById('dash-laba').innerText = window.formatRp(labaBersih);
+            document.getElementById('dash-laba').className = `text-xl font-extrabold ${labaBersih >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+            window.renderMasterBarang();
+            window.renderBucketCards();
+            window.renderRiwayat();
+            window.renderRiwayatGaji();
+            window.renderLaporanPreviews(totalPendapatan, totalHPP, labaKotor, totalBebanGaji, labaBersih, totalInventaris);
+            window.populateTransaksiDropdowns();
         };
 
         window.printLaporan = function(type) {
@@ -1395,9 +1346,7 @@
                                 <td class="py-2">TOTAL PENDAPATAN</td>
                                 <td class="py-2 text-right text-emerald-700">${window.formatRp(totalPendapatan)}</td>
                             </tr>
-
                             <tr><td colspan="2" class="py-2"></td></tr>
-
                             <tr class="border-b border-slate-200">
                                 <td class="py-2 font-bold text-slate-700" colspan="2">HARGA POKOK PENJUALAN (HPP)</td>
                             </tr>
@@ -1409,9 +1358,7 @@
                                 <td class="py-2">LABA KOTOR USAHA</td>
                                 <td class="py-2 text-right text-emerald-700">${window.formatRp(labaKotor)}</td>
                             </tr>
-
                             <tr><td colspan="2" class="py-2"></td></tr>
-
                             <tr class="border-b border-slate-200">
                                 <td class="py-2 font-bold text-slate-700" colspan="2">BEBAN OPERASIONAL</td>
                             </tr>
@@ -1419,23 +1366,13 @@
                                 <td class="py-2 pl-4">Beban Gaji Karyawan</td>
                                 <td class="py-2 text-right font-medium text-red-600">(${window.formatRp(totalBebanGaji)})</td>
                             </tr>
-
                             <tr><td colspan="2" class="py-4"></td></tr>
-
                             <tr class="bg-slate-100 font-bold text-base border-t-2 border-b-2 border-slate-800">
                                 <td class="py-3 px-2">LABA / RUGI BERSIH USAHA</td>
                                 <td class="py-3 px-2 text-right ${labaBersih >= 0 ? 'text-emerald-700' : 'text-red-600'}">${window.formatRp(labaBersih)}</td>
                             </tr>
                         </tbody>
                     </table>
-
-                    <div class="mt-12 flex justify-between text-xs text-slate-500 pt-8 border-t border-slate-200">
-                        <div>Dicetak otomatis oleh Sistem Keuangan SnackBucket</div>
-                        <div class="text-center">
-                            <p class="mb-10">Pemilik Usaha,</p>
-                            <p class="font-bold underline">(.......................................)</p>
-                        </div>
-                    </div>
                 `;
             } else if (type === 'neraca') {
                 const totalAset = window.state.kas + totalInventaris;
@@ -1489,14 +1426,6 @@
                             </table>
                         </div>
                     </div>
-
-                    <div class="mt-12 flex justify-between text-xs text-slate-500 pt-8 border-t border-slate-200">
-                        <div>Status Neraca: <strong class="${totalAset === totalPasiva ? 'text-emerald-600' : 'text-red-600'}">${totalAset === totalPasiva ? 'BALANCED (SEIMBANG)' : 'UNBALANCED'}</strong></div>
-                        <div class="text-center">
-                            <p class="mb-10">Pemilik Usaha,</p>
-                            <p class="font-bold underline">(.......................................)</p>
-                        </div>
-                    </div>
                 `;
             }
 
@@ -1505,7 +1434,46 @@
             document.getElementById('print-area').classList.add('hidden');
         };
 
-        // ... existing modal functions (openModalAwal, closeModalAwal, saveModalAwal) ...
+        // DOM CONTENT LOADED INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedAccount = localStorage.getItem('snackbucket_account_id');
+
+            if (auth) {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        if (savedAccount) {
+                            activeAccountId = savedAccount;
+                            document.getElementById('auth-modal').classList.add('hidden');
+                            document.getElementById('user-email-display').innerText = activeAccountId;
+                            window.listenCloudStorage(activeAccountId);
+                        } else {
+                            document.getElementById('auth-modal').classList.remove('hidden');
+                        }
+                    } else {
+                        signInAnonymously(auth).catch(() => {
+                            if (!savedAccount) document.getElementById('auth-modal').classList.remove('hidden');
+                        });
+                    }
+                });
+            } else {
+                if (savedAccount) {
+                    activeAccountId = savedAccount;
+                    document.getElementById('auth-modal').classList.add('hidden');
+                    document.getElementById('user-email-display').innerText = activeAccountId;
+                    window.loadFromLocalStorage(activeAccountId);
+                }
+            }
+
+            if (typeof window.addBucketRow === 'function') {
+                window.addBucketRow();
+            }
+            window.renderAll();
+        });
     </script>
 </body>
 </html>
